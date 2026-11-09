@@ -194,7 +194,7 @@ store.on('incoming', (chat, msg) => {
   blip();
   if (!visible && settings.notifications && 'Notification' in window && Notification.permission === 'granted') {
     try {
-      const n = new Notification(title, { body, tag: chat.id, icon: '/app/icon.svg', silent: true });
+      const n = new Notification(title, { body, tag: chat.id, icon: '/app/icon-192.png', silent: true });
       n.onclick = () => { focus(); go('/c/' + chat.id); n.close(); };
     } catch { /* */ }
   } else if (visible) {

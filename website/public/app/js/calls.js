@@ -252,7 +252,7 @@ function notifyIncoming() {
   if (document.visibilityState === 'visible' || !('Notification' in window) || Notification.permission !== 'granted') return;
   const peer = store.user(state.peerId);
   try {
-    const n = new Notification(peer?.displayName ?? 'RyzikChat', { body: state.video ? 'Входящий видеозвонок' : 'Входящий звонок', tag: 'call', icon: '/app/icon.svg', requireInteraction: true });
+    const n = new Notification(peer?.displayName ?? 'RyzikChat', { body: state.video ? 'Входящий видеозвонок' : 'Входящий звонок', tag: 'call', icon: '/app/icon-192.png', requireInteraction: true });
     n.onclick = () => { focus(); n.close(); };
   } catch { /* */ }
 }

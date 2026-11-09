@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.compose.ui.graphics.Color
 
-/** Иконка приложения: цвет фона под лисёнком. */
+/** Иконка приложения: цвет фона под логотипом. */
 class AppIcon(val key: String, val title: String, val colors: List<Color>)
 
 /** Смена иконки приложения (Премиум). Каждая иконка — activity-alias в манифесте, включена ровно одна. */
@@ -13,7 +13,7 @@ object AppIcons {
     const val supported = true
 
     val all = listOf(
-        AppIcon("default", "Классическая", listOf(Color(0xFF6E5BFF), Color(0xFF9B3DF0), Color(0xFFE23C8C))),
+        AppIcon("default", "Классическая", listOf(Color.White, Color.White)),
         AppIcon("night", "Ночь", listOf(Color(0xFF1B1F3B), Color(0xFF2D2A5A), Color(0xFF0E0E1A))),
         AppIcon("sunset", "Закат", listOf(Color(0xFFFF8A3D), Color(0xFFFF5E62), Color(0xFFC2185B))),
         AppIcon("mint", "Мята", listOf(Color(0xFF1DE9B6), Color(0xFF26A69A), Color(0xFF00796B))),

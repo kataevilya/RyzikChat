@@ -61,6 +61,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.ui.res.painterResource
+import app.ryzik.chat.R
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -298,10 +302,14 @@ private fun AppIconPicker(isPremium: Boolean, onError: (String) -> Unit) {
                                     .size(56.dp)
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(Brush.linearGradient(icon.colors))
-                                    .then(if (selected) Modifier.border(3.dp, Color.White, RoundedCornerShape(16.dp)) else Modifier),
+                                    .then(if (selected) Modifier.border(3.dp, if (icon.key == "default") Color(0xFF5E2EDA) else Color.White, RoundedCornerShape(16.dp)) else Modifier),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text("🦊", fontSize = 26.sp)
+                                Image(
+                                    painterResource(if (icon.key == "default") R.drawable.ic_launcher_foreground else R.drawable.ic_launcher_foreground_light),
+                                    contentDescription = null,
+                                    modifier = Modifier.requiredSize(84.dp),
+                                )
                             }
                             Spacer(Modifier.height(4.dp))
                             Text(icon.title, style = MaterialTheme.typography.labelMedium, color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
