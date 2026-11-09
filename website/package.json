@@ -1,0 +1,9 @@
+{
+  "name": "ryzikchat-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Сайт RyzikChat: скачивание последней версии и статистика сервера",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": { "dev": "vercel dev", "deploy": "vercel --prod" }
+}

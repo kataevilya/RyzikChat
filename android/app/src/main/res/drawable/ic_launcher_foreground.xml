@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Рыжий лисёнок, у которого голова — облачко сообщения. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.84" android:scaleY="0.84" android:translateY="1">
+        <!-- тень -->
+        <group android:translateY="3"><path android:fillColor="#403A1470" android:strokeColor="#403A1470" android:strokeWidth="5" android:strokeLineJoin="round" android:pathData="M54,78 C44,78 33,72 30,61 C28.5,55 29.5,49 32,44 L30,25 L45,35 C48,34 51,33.5 54,33.5 C57,33.5 60,34 63,35 L78,25 L76,44 C78.5,49 79.5,55 78,61 C77,65 75,68.5 72,71.5 L79,82 L64,76.5 C61,77.5 57.5,78 54,78 Z" /></group>
+        <!-- голова -->
+        <path android:strokeWidth="5" android:strokeLineJoin="round" android:pathData="M54,78 C44,78 33,72 30,61 C28.5,55 29.5,49 32,44 L30,25 L45,35 C48,34 51,33.5 54,33.5 C57,33.5 60,34 63,35 L78,25 L76,44 C78.5,49 79.5,55 78,61 C77,65 75,68.5 72,71.5 L79,82 L64,76.5 C61,77.5 57.5,78 54,78 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="54" android:startY="22" android:endX="54" android:endY="84">
+                    <item android:offset="0" android:color="#FFFFB443" />
+                    <item android:offset="1" android:color="#FFFF6A2B" />
+                </gradient>
+            </aapt:attr>
+            <aapt:attr name="android:strokeColor">
+                <gradient android:type="linear" android:startX="54" android:startY="22" android:endX="54" android:endY="84">
+                    <item android:offset="0" android:color="#FFFFB443" />
+                    <item android:offset="1" android:color="#FFFF6A2B" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <!-- белая мордочка и хвостик облачка -->
+        <path android:fillColor="#FFFFFFFF"
+            android:pathData="M27,54 C36,52 45,55 54,63 C63,55 72,52 81,54 C80,60 78,66 74,70 L80,83 L64,79 C61,80 57.5,80.5 54,80.5 C44,80.5 33,74 28,64 Z" />
+        <!-- внутренние ушки -->
+        <path android:fillColor="#FFFFF3E6" android:pathData="M35,31 L44,37.5 L36.5,42 Z" />
+        <path android:fillColor="#FFFFF3E6" android:pathData="M73,31 L64,37.5 L71.5,42 Z" />
+        <!-- глаза-улыбки -->
+        <path android:strokeColor="#FF2B1B14" android:strokeWidth="3.4" android:strokeLineCap="round" android:pathData="M40.5,50.5 Q44.5,46.5 48.5,50.5" />
+        <path android:strokeColor="#FF2B1B14" android:strokeWidth="3.4" android:strokeLineCap="round" android:pathData="M59.5,50.5 Q63.5,46.5 67.5,50.5" />
+        <!-- носик -->
+        <path android:fillColor="#FF2B1B14" android:pathData="M50,63.5 Q54,60.5 58,63.5 Q56.3,67.5 54,68 Q51.7,67.5 50,63.5 Z" />
+    </group>
+</vector>

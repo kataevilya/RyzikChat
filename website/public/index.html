@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RyzikChat — мессенджер со сквозным шифрованием</title>
+<meta name="description" content="Скачайте последнюю версию RyzikChat для Android. Сквозное шифрование, группы, каналы, боты и звонки.">
+<meta property="og:title" content="RyzikChat">
+<meta property="og:description" content="Мессенджер со сквозным шифрованием. Скачайте последнюю версию для Android.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<style>
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;padding:56px 0 40px}
+h1{font-size:clamp(46px,7.4vw,96px);line-height:.95;letter-spacing:-.045em;font-weight:900;margin:22px 0 26px}
+h1 .out{color:#4a4a4a}
+.lead{font-size:19px;line-height:1.6;color:#b5b5b5;max-width:520px}
+.cta{display:flex;gap:14px;flex-wrap:wrap;margin-top:38px}
+.meta{margin-top:22px;color:var(--mute);font-size:14px;display:flex;gap:18px;flex-wrap:wrap}
+.meta b{color:#fff;font-weight:600}
+.phone{justify-self:center;width:290px;height:590px;border-radius:46px;border:10px solid #fff;background:#000;position:relative;overflow:hidden;
+  box-shadow:0 0 0 1px #333,0 50px 120px -30px rgba(255,255,255,.25);transform:rotate(-4deg);animation:float 7s ease-in-out infinite}
+@keyframes float{50%{transform:rotate(-4deg) translateY(-14px)}}
+.phone .bar{height:66px;border-bottom:1px solid #1d1d1d;display:flex;align-items:center;gap:10px;padding:18px 16px 0}
+.av{width:34px;height:34px;border-radius:50%;background:#fff;color:#000;display:grid;place-items:center;font-weight:800;font-size:14px}
+.phone .name{font-weight:700;font-size:14px}.phone .st{font-size:11px;color:#8a8a8a}
+.msgs{padding:16px 12px;display:flex;flex-direction:column;gap:9px}
+.m{max-width:78%;padding:9px 13px;border-radius:18px;font-size:13px;line-height:1.4;opacity:0;animation:pop .5s forwards}
+.m.in{background:#1a1a1a;align-self:flex-start;border-bottom-left-radius:6px}
+.m.out{background:#fff;color:#000;align-self:flex-end;border-bottom-right-radius:6px}
+.m small{display:block;font-size:10px;opacity:.5;margin-top:3px;text-align:right}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+.lock{position:absolute;left:12px;right:12px;bottom:16px;border:1px dashed #333;border-radius:14px;padding:10px;font-size:11px;color:#9a9a9a;text-align:center}
+.marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;white-space:nowrap;margin:60px 0}
+.marquee div{display:inline-block;padding:22px 0;animation:mq 30s linear infinite;font-size:22px;font-weight:800;letter-spacing:-.01em}
+.marquee span{margin:0 28px;color:#fff}.marquee i{font-style:normal;color:#444}
+@keyframes mq{to{transform:translateX(-50%)}}
+.h2{font-size:clamp(32px,4.4vw,52px);font-weight:900;letter-spacing:-.035em;line-height:1.02;margin-bottom:40px}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:28px;overflow:hidden}
+.f{background:#000;padding:34px 30px;transition:background .3s}
+.f:hover{background:#0c0c0c}
+.f .ic{width:46px;height:46px;border:1px solid #fff;border-radius:14px;display:grid;place-items:center;margin-bottom:22px}
+.f .ic svg{width:22px;height:22px}
+.f h3{font-size:19px;margin-bottom:10px;letter-spacing:-.01em}
+.f p{color:#9a9a9a;font-size:15px;line-height:1.55}
+.live{margin-top:90px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.live a{border:1px solid #222;border-radius:24px;padding:28px;transition:.25s;display:block}
+.live a:hover{border-color:#fff;transform:translateY(-3px)}
+.live .n{font-size:54px;font-weight:900;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.live .l{color:var(--mute);margin-top:6px;font-size:14px}
+.steps{margin-top:90px;display:grid;grid-template-columns:repeat(3,1fr);gap:28px;counter-reset:s}
+.step{border-top:1px solid #fff;padding-top:20px}
+.step::before{counter-increment:s;content:"0" counter(s);font-size:13px;color:var(--mute);font-weight:600}
+.step h4{font-size:20px;margin:10px 0 8px}.step p{color:#9a9a9a;line-height:1.55;font-size:15px}
+.final{margin-top:110px;border-radius:36px;background:#fff;color:#000;padding:70px 40px;text-align:center}
+.final h2{font-size:clamp(34px,5vw,64px);font-weight:900;letter-spacing:-.04em;line-height:1}
+.final p{margin:18px auto 34px;color:#555;max-width:520px;font-size:17px}
+.final .btn.primary{background:#000;color:#fff;border-color:#000}
+.final .btn.primary:hover{box-shadow:0 18px 50px -12px rgba(0,0,0,.5)}
+@media (max-width:900px){.hero{grid-template-columns:1fr}.phone{margin-top:30px}.features,.live,.steps{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="/"><img src="/logo.svg" alt="" width="34" height="34">RyzikChat</a>
+    <div class="links"><a class="on" href="/">Главная</a><a href="/статистика">Статистика</a><a href="/app">Веб-версия</a></div>
+  </nav>
+
+  <section class="hero">
+    <div>
+      <span class="tag reveal"><span class="dot" id="srvDot"></span><span id="srvTag">Проверяем сервер…</span></span>
+      <h1 class="reveal" style="animation-delay:.08s">Общайся.<br><span class="out">Без чужих</span><br>глаз.</h1>
+      <p class="lead reveal" style="animation-delay:.16s">RyzikChat — мессенджер, где переписку видите только вы и собеседник. Чаты, группы, каналы, звонки и боты в одном лёгком приложении.</p>
+      <div class="cta reveal" style="animation-delay:.24s">
+        <a class="btn primary" id="dl" href="/download">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M6 11l6 6 6-6M4 21h16"/></svg>
+          <span>Скачать для Android</span>
+        </a>
+        <a class="btn ghost" href="/app">Открыть веб-версию</a>
+        <a class="btn ghost" href="https://t.me/ryzikchat" target="_blank" rel="noopener">Telegram-канал</a>
+      </div>
+      <div class="meta reveal" style="animation-delay:.32s">
+        <span>Версия <b id="ver">—</b></span><span>APK · Android 8+</span><span>Бесплатно</span>
+      </div>
+    </div>
+    <div class="reveal" style="animation-delay:.2s;justify-self:center"><div class="phone">
+      <div class="bar"><div class="av">R</div><div><div class="name">Рыжик</div><div class="st">в сети</div></div></div>
+      <div class="msgs">
+        <div class="m in" style="animation-delay:.9s">Привет! Ты уже в RyzikChat? 👋<small>12:01</small></div>
+        <div class="m out" style="animation-delay:1.6s">Да, только что скачал<small>12:01 ✓✓</small></div>
+        <div class="m in" style="animation-delay:2.3s">Тут всё шифруется на телефоне, даже сервер не прочитает 🔒<small>12:02</small></div>
+        <div class="m out" style="animation-delay:3s">Идеально. Создаю группу 🔥<small>12:02 ✓✓</small></div>
+      </div>
+      <div class="lock">🔒 Сообщения защищены сквозным шифрованием</div>
+    </div></div>
+  </section>
+
+  <div class="marquee"><div>
+    <span>Сквозное шифрование</span><i>✦</i><span>Группы и каналы</span><i>✦</i><span>Звонки</span><i>✦</i><span>Боты на Python</span><i>✦</i><span>Стикеры</span><i>✦</i><span>Подарки FLUX</span><i>✦</i><span>Двухэтапная защита</span><i>✦</i>
+    <span>Сквозное шифрование</span><i>✦</i><span>Группы и каналы</span><i>✦</i><span>Звонки</span><i>✦</i><span>Боты на Python</span><i>✦</i><span>Стикеры</span><i>✦</i><span>Подарки FLUX</span><i>✦</i><span>Двухэтапная защита</span><i>✦</i>
+  </div></div>
+
+  <h2 class="h2">Всё, что нужно.<br><span style="color:#555">Ничего лишнего.</span></h2>
+  <div class="features">
+    <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><h3>Сквозное шифрование</h3><p>Ключи хранятся только на ваших устройствах. Сервер передаёт сообщения, но не может их прочитать.</p></div>
+    <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg></div><h3>Группы и каналы</h3><p>Открытые и закрытые группы, приглашения по ссылке, каналы с комментариями и обсуждениями.</p></div>
+    <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></div><h3>Звонки</h3><p>Голосовые звонки прямо в чате. Звонок дойдёт, даже если приложение свёрнуто.</p></div>
+    <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="4" y="7" width="16" height="13" rx="3"/><path d="M12 7V3M9 13h.01M15 13h.01M9 17h6"/></svg></div><h3>Боты</h3><p>Создайте бота в @ryzikbot, получите токен и пишите логику на Python за пару минут.</p></div>
+    <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg></div><h3>Премиум и подарки</h3><p>Валюта FLUX, коллекционные подарки, свои стикеры, обои чатов и оформление профиля.</p></div>
+    <div class="f"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><h3>Защита аккаунта</h3><p>Двухэтапная проверка, список устройств и уведомления о каждом новом входе.</p></div>
+  </div>
+
+  <div class="live">
+    <a href="/статистика"><div class="n" id="sUsers">—</div><div class="l">пользователей</div></a>
+    <a href="/статистика"><div class="n" id="sOnline">—</div><div class="l">сейчас в сети</div></a>
+    <a href="/статистика"><div class="n" id="sMsgs">—</div><div class="l">сообщений отправлено</div></a>
+  </div>
+
+  <div class="steps">
+    <div class="step"><h4>Скачайте APK</h4><p>Нажмите «Скачать для Android». Всегда загружается самая новая версия.</p></div>
+    <div class="step"><h4>Установите</h4><p>Разрешите установку из этого источника, если телефон попросит.</p></div>
+    <div class="step"><h4>Общайтесь</h4><p>Придумайте юзернейм и пароль. Дальше обновления приходят прямо в приложении.</p></div>
+  </div>
+
+  <section class="final">
+    <h2>Готовы попробовать?</h2>
+    <p>Последняя версия RyzikChat <b id="ver2"></b> уже ждёт вас.</p>
+    <a class="btn primary" href="/download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M6 11l6 6 6-6M4 21h16"/></svg>Скачать RyzikChat</a>
+  </section>
+
+  <footer><span>© <span id="yr"></span> RyzikChat</span><span><a href="/статистика">Статистика</a> · <a href="https://t.me/ryzikchat" target="_blank" rel="noopener">@ryzikchat</a></span></footer>
+</div>
+<script>
+const fmt = n => new Intl.NumberFormat('ru-RU').format(n);
+document.getElementById('yr').textContent = new Date().getFullYear();
+fetch('/api/version').then(r => r.json()).then(v => {
+  if (v.apk) document.querySelectorAll('a[href="/download"]').forEach(a => a.href = v.apk);
+  if (v.version) { document.getElementById('ver').textContent = v.version; document.getElementById('ver2').textContent = v.version; }
+}).catch(() => {});
+fetch('/api/stats').then(r => r.json()).then(s => {
+  const dot = document.getElementById('srvDot'), tag = document.getElementById('srvTag');
+  if (!s.ok) { dot.classList.add('off'); tag.textContent = 'Сервер временно недоступен'; return; }
+  tag.textContent = 'Сервер работает · ' + fmt(s.online) + ' в сети';
+  countUp('sUsers', s.users); countUp('sOnline', s.online); countUp('sMsgs', s.messages);
+}).catch(() => { document.getElementById('srvDot').classList.add('off'); document.getElementById('srvTag').textContent = 'Сервер временно недоступен'; });
+function countUp(id, to) {
+  const el = document.getElementById(id), t0 = performance.now(), d = 1400;
+  (function step(t) { const p = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - p, 3); el.textContent = fmt(Math.round(to * e)); if (p < 1) requestAnimationFrame(step); })(t0);
+}
+</script>
+</body>
+</html>

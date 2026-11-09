@@ -1,0 +1,21 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.DS_Store
+captures/
+node_modules/
+server/data/
+.env
+android/app/src/main/assets/emoji/
+build/
+.gradle/
+local.properties
+node_modules/
+.kotlin/
+
+# Ключ подписи хранится только в секрете GitHub RYZIK_KEYSTORE_BASE64
+*.jks
+*.keystore
+RYZIK_KEYSTORE_BASE64*.txt

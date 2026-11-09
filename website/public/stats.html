@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Статистика — RyzikChat</title>
+<meta name="description" content="Живая статистика сервера RyzikChat: сколько пользователей, кто в сети, сообщения, группы и каналы.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<style>
+.head{padding:50px 0 34px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+h1{font-size:clamp(44px,7vw,88px);font-weight:900;letter-spacing:-.045em;line-height:.95;margin-top:20px}
+.upd{color:var(--mute);font-size:14px;text-align:right;line-height:1.7}
+.upd b{color:#fff;font-weight:600}
+.big{border:1px solid #fff;border-radius:32px;padding:44px 40px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;background:radial-gradient(circle at 85% 20%,#161616,#000 60%)}
+.big .lbl{font-size:15px;color:#bdbdbd;text-transform:uppercase;letter-spacing:.14em}
+.big .num{font-size:clamp(76px,13vw,168px);font-weight:900;letter-spacing:-.06em;line-height:.9;margin-top:14px;font-variant-numeric:tabular-nums}
+.ring{justify-self:end;position:relative;width:220px;height:220px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:12}
+.ring .bg{stroke:#1d1d1d}.ring .fg{stroke:#fff;stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.2,.7,.2,1)}
+.ring .c{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring .c b{font-size:44px;font-weight:900;letter-spacing:-.04em;display:block;font-variant-numeric:tabular-nums}
+.ring .c span{color:var(--mute);font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:16px}
+.card{border:1px solid #222;border-radius:24px;padding:26px;transition:.25s;background:#000}
+.card:hover{border-color:#fff;transform:translateY(-3px)}
+.card .t{color:var(--mute);font-size:14px;display:flex;align-items:center;gap:8px}
+.card .t svg{width:16px;height:16px}
+.card .v{font-size:44px;font-weight:900;letter-spacing:-.04em;margin-top:14px;font-variant-numeric:tabular-nums}
+.card .s{color:#6d6d6d;font-size:13px;margin-top:4px}
+.card.inv{background:#fff;color:#000;border-color:#fff}
+.card.inv .t,.card.inv .s{color:#555}
+.err{display:none;margin-top:16px;border:1px dashed #444;border-radius:20px;padding:20px;color:#bbb}
+.bottom{margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;border:1px solid #222;border-radius:24px;padding:22px 26px}
+.bottom .p{color:var(--mute);font-size:14px}
+.bar{height:3px;background:#1a1a1a;border-radius:3px;overflow:hidden;margin-top:12px;width:180px}
+.bar i{display:block;height:100%;background:#fff;width:100%;transform-origin:left;animation:shrink 30s linear infinite}
+@keyframes shrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.skel{color:#333}
+@media (max-width:900px){.big{grid-template-columns:1fr}.ring{justify-self:start}.cards{grid-template-columns:repeat(2,1fr)}.upd{text-align:left}}
+@media (max-width:480px){.cards{gap:10px}.card{padding:18px}.card .v{font-size:32px}.card .s{font-size:12px}.big{padding:32px 24px}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="/"><img src="/logo.svg" alt="" width="34" height="34">RyzikChat</a>
+    <div class="links"><a href="/">Главная</a><a class="on" href="/статистика">Статистика</a><a href="/app">Веб-версия</a></div>
+  </nav>
+
+  <div class="head">
+    <div>
+      <span class="tag reveal"><span class="dot" id="dot"></span><span id="state">Подключаемся к серверу…</span></span>
+      <h1 class="reveal" style="animation-delay:.08s">Статистика<br>сервера</h1>
+    </div>
+    <div class="upd reveal" style="animation-delay:.16s">
+      Сервер: <b>ryzikchat.serveousercontent.com</b><br>
+      Версия сервера: <b id="ver">—</b><br>
+      Обновлено: <b id="at">—</b>
+      <div class="bar" style="margin-left:auto"><i id="tick"></i></div>
+    </div>
+  </div>
+
+  <section class="big reveal" style="animation-delay:.2s">
+    <div>
+      <div class="lbl">Пользователей в RyzikChat</div>
+      <div class="num skel" id="users">0</div>
+    </div>
+    <div class="ring">
+      <svg viewBox="0 0 220 220"><circle class="bg" cx="110" cy="110" r="96"/><circle class="fg" id="arc" cx="110" cy="110" r="96" stroke-dasharray="603.19" stroke-dashoffset="603.19"/></svg>
+      <div class="c"><div><b id="online">0</b><span>сейчас в сети</span></div></div>
+    </div>
+  </section>
+
+  <div class="err" id="err">Не удалось получить статистику: сервер сейчас недоступен. Попробуем снова через 30 секунд.</div>
+
+  <div class="cards reveal" style="animation-delay:.28s">
+    <div class="card inv"><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Новых за сутки</div><div class="v" id="newToday">0</div><div class="s">регистраций за 24 часа</div></div>
+    <div class="card"><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Новых за неделю</div><div class="v" id="newWeek">0</div><div class="s">регистраций за 7 дней</div></div>
+    <div class="card"><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>Сообщений</div><div class="v" id="messages">0</div><div class="s">отправлено всего</div></div>
+    <div class="card"><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg>Групп</div><div class="v" id="groups">0</div><div class="s">общих чатов</div></div>
+    <div class="card"><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4h4l6 5V5L7 10zM17 9a4 4 0 0 1 0 6"/></svg>Каналов</div><div class="v" id="channels">0</div><div class="s">публикуют посты</div></div>
+    <div class="card"><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="7" width="16" height="13" rx="3"/><path d="M12 7V3M9 13h.01M15 13h.01"/></svg>Ботов</div><div class="v" id="bots">0</div><div class="s">созданы в @ryzikbot</div></div>
+    <div class="card"><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>В сети</div><div class="v" id="pct">0%</div><div class="s">от всех пользователей</div></div>
+    <div class="card"><div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M6 11l6 6 6-6M4 21h16"/></svg>Приложение</div><div class="v" id="app">—</div><div class="s"><a href="/" style="text-decoration:underline">скачать последнюю</a></div></div>
+  </div>
+
+  <div class="bottom">
+    <span class="p">Данные обновляются автоматически каждые 30 секунд. Учитываются только живые люди, без системных аккаунтов и ботов.</span>
+    <a class="btn primary" href="/" style="padding:14px 24px;font-size:15px">Скачать RyzikChat</a>
+  </div>
+
+  <footer><span>© <span id="yr"></span> RyzikChat</span><span><a href="/">Главная</a> · <a href="https://t.me/ryzikchat" target="_blank" rel="noopener">@ryzikchat</a></span></footer>
+</div>
+<script>
+const fmt = n => new Intl.NumberFormat('ru-RU').format(n);
+const $ = id => document.getElementById(id);
+$('yr').textContent = new Date().getFullYear();
+const shown = {};
+function animate(id, to, suffix = '') {
+  const el = $(id), from = shown[id] ?? 0, t0 = performance.now(), d = 1200;
+  shown[id] = to; el.classList.remove('skel');
+  (function step(t) { const p = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - p, 3); el.textContent = fmt(Math.round(from + (to - from) * e)) + suffix; if (p < 1) requestAnimationFrame(step); })(t0);
+}
+function restartTick() { const i = $('tick'); i.style.animation = 'none'; i.offsetWidth; i.style.animation = ''; }
+async function load() {
+  restartTick();
+  try {
+    const s = await (await fetch('/api/stats', { cache: 'no-store' })).json();
+    if (!s.ok) throw new Error(s.error);
+    $('err').style.display = 'none'; $('dot').classList.remove('off');
+    $('state').textContent = 'Сервер работает';
+    for (const k of ['users', 'online', 'newToday', 'newWeek', 'messages', 'groups', 'channels', 'bots']) animate(k, s[k] ?? 0);
+    const pct = s.users ? Math.round(s.online / s.users * 100) : 0;
+    animate('pct', pct, '%');
+    $('arc').style.strokeDashoffset = 603.19 * (1 - Math.min(1, s.users ? s.online / s.users : 0));
+    $('ver').textContent = s.version || '—';
+    $('at').textContent = new Date(s.updatedAt || Date.now()).toLocaleTimeString('ru-RU');
+  } catch {
+    $('err').style.display = 'block'; $('dot').classList.add('off');
+    $('state').textContent = 'Сервер недоступен';
+  }
+}
+fetch('/api/version').then(r => r.json()).then(v => { if (v.version) $('app').textContent = v.version; }).catch(() => {});
+load(); setInterval(load, 30000);
+</script>
+</body>
+</html>

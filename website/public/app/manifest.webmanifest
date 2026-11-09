@@ -1,0 +1,12 @@
+{
+  "name": "RyzikChat",
+  "short_name": "RyzikChat",
+  "description": "Веб-версия мессенджера RyzikChat",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "display": "standalone",
+  "background_color": "#fffaf7",
+  "theme_color": "#FF8A3D",
+  "lang": "ru",
+  "icons": [{ "src": "/app/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

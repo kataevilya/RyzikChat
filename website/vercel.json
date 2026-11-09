@@ -1,0 +1,16 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/статистика", "destination": "/stats.html" },
+    { "source": "/%D1%81%D1%82%D0%B0%D1%82%D0%B8%D1%81%D1%82%D0%B8%D0%BA%D0%B0", "destination": "/stats.html" },
+    { "source": "/stats", "destination": "/stats.html" },
+    { "source": "/download", "destination": "/api/download" },
+    { "source": "/app", "destination": "/app/index.html" },
+    { "source": "/rc/:path*", "destination": "https://ryzikchat.serveousercontent.com/:path*" }
+  ],
+  "headers": [
+    { "source": "/api/(.*)", "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }] },
+    { "source": "/rc/((?!api/avatars/).*)", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
+    { "source": "/app/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+  ]
+}

@@ -1,0 +1,3188 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "RyzikChat API",
+    "version": "0.6.0",
+    "description": "Открытое API мессенджера RyzikChat. С ним можно написать клиент для любой платформы: Windows, iOS, веб, бот.\n\n**Авторизация:** заголовок `Authorization: Bearer <token>` (токен из /api/auth/login).\n\n**Реальное время:** WebSocket `/ws?token=<token>`. Сервер присылает JSON-события `message.new`, `message.updated`, `chat.new`, `chat.updated`, `chat.removed`, `typing`, `read`, `presence`, `user.updated`, `call.signal`, `reaction` (кто-то отреагировал на ваше сообщение). В `chat.new` поле `by` — кто добавил. Клиент может слать `{type:\"typing\",chatId}`, `{type:\"call.signal\",to,data}`, `{type:\"ping\"}`.\n\n**Шифрование:** сообщения шифруются на клиенте, формат описан в PROTOCOL.md в репозитории."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Проверка сервера",
+        "tags": [
+          "Система"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Регистрация",
+        "tags": [
+          "Аккаунт"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Auth"
+                }
+              }
+            }
+          }
+        },
+        "description": "password — это не сам пароль, а «ключ входа» (первые 32 байта PBKDF2, см. PROTOCOL.md). publicKey — X25519 (base64), encryptedPrivateKey — приватный ключ, зашифрованный ключом из пароля.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "publicKey": {
+                    "type": "string"
+                  },
+                  "encryptedPrivateKey": {
+                    "type": "string"
+                  },
+                  "device": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Вход",
+        "tags": [
+          "Аккаунт"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Auth"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "device": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "description": "Если у аккаунта уже есть активные сессии, вместо токена приходит {needCode, challengeId, sentTo}: 6-значный код отправлен в чат «RyzikChat Info» на другом устройстве. Вход завершается через /api/auth/login/confirm."
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Выход (удаляет текущий токен)",
+        "tags": [
+          "Аккаунт"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions": {
+      "get": {
+        "summary": "Активные сеансы",
+        "tags": [
+          "Аккаунт"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/terminate-others": {
+      "post": {
+        "summary": "Завершить другие сеансы",
+        "tags": [
+          "Аккаунт"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "summary": "Мой профиль",
+        "tags": [
+          "Пользователи"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Изменить профиль",
+        "tags": [
+          "Пользователи"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "bio": {
+                    "type": "string"
+                  },
+                  "avatarFileId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/password": {
+      "post": {
+        "summary": "Сменить пароль",
+        "tags": [
+          "Аккаунт"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "oldPassword": {
+                    "type": "string"
+                  },
+                  "newPassword": {
+                    "type": "string"
+                  },
+                  "encryptedPrivateKey": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/search": {
+      "get": {
+        "summary": "Поиск людей",
+        "tags": [
+          "Пользователи"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "summary": "Пользователь",
+        "tags": [
+          "Пользователи"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chats": {
+      "get": {
+        "summary": "Мои чаты",
+        "tags": [
+          "Чаты"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Chat"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chats/{id}": {
+      "get": {
+        "summary": "Чат (или превью канала)",
+        "tags": [
+          "Чаты"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Изменить группу/канал",
+        "tags": [
+          "Чаты"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "avatarFileId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chats/direct": {
+      "post": {
+        "summary": "Открыть личный чат",
+        "tags": [
+          "Чаты"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chats/group": {
+      "post": {
+        "summary": "Создать группу",
+        "tags": [
+          "Чаты"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "memberIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chats/channel": {
+      "post": {
+        "summary": "Создать канал",
+        "tags": [
+          "Каналы"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/channels/search": {
+      "get": {
+        "summary": "Поиск каналов",
+        "tags": [
+          "Каналы"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Chat"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chats/{id}/subscribe": {
+      "post": {
+        "summary": "Вступить в открытую группу или подписаться на открытый канал",
+        "tags": [
+          "Каналы"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chats/{id}/members/{userId}/role": {
+      "put": {
+        "summary": "Назначить админа канала",
+        "tags": [
+          "Каналы"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "subscriber"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chats/{id}/settings": {
+      "patch": {
+        "summary": "Закреп / без звука / архив",
+        "tags": [
+          "Чаты"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pinned": {
+                    "type": "boolean"
+                  },
+                  "muted": {
+                    "type": "boolean"
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chats/{id}/members": {
+      "post": {
+        "summary": "Добавить в группу",
+        "tags": [
+          "Чаты"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chats/{id}/members/{userId}": {
+      "delete": {
+        "summary": "Исключить / выйти / отписаться (userId = свой id)",
+        "tags": [
+          "Чаты"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chats/{id}/read": {
+      "post": {
+        "summary": "Отметить прочитанным до seq",
+        "tags": [
+          "Сообщения"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "seq": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chats/{id}/read-state": {
+      "get": {
+        "summary": "Кто до какого seq прочитал",
+        "tags": [
+          "Сообщения"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/chats/{id}/messages": {
+      "get": {
+        "summary": "История",
+        "tags": [
+          "Сообщения"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Message"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Отправить",
+        "tags": [
+          "Сообщения"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          }
+        },
+        "description": "payload — зашифрованный конверт (см. PROTOCOL.md). В каналах — открытый JSON {\"v\":0,\"plain\":{...}}.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "text",
+                      "image",
+                      "video",
+                      "file",
+                      "voice",
+                      "square"
+                    ]
+                  },
+                  "payload": {
+                    "type": "string"
+                  },
+                  "replyTo": {
+                    "type": "string"
+                  },
+                  "forwardedFrom": {
+                    "type": "string"
+                  },
+                  "clientId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/messages/{id}": {
+      "patch": {
+        "summary": "Изменить",
+        "tags": [
+          "Сообщения"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "payload": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Удалить",
+        "tags": [
+          "Сообщения"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/messages/{id}/reaction": {
+      "put": {
+        "summary": "Реакция (пустая строка — убрать)",
+        "tags": [
+          "Сообщения"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "emoji": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/files": {
+      "post": {
+        "summary": "Загрузить файл (multipart, поле file)",
+        "tags": [
+          "Файлы"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "mime": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/files/{id}": {
+      "get": {
+        "summary": "Скачать файл",
+        "tags": [
+          "Файлы"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Байты файла"
+          }
+        }
+      }
+    },
+    "/api/badges": {
+      "get": {
+        "summary": "Все бейджи",
+        "tags": [
+          "Бейджи"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Badge"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/badges": {
+      "post": {
+        "summary": "Создать бейдж (админ)",
+        "tags": [
+          "Админ"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Badge"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "emoji": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/badges/{id}": {
+      "delete": {
+        "summary": "Удалить бейдж (админ)",
+        "tags": [
+          "Админ"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{id}/badges/{badgeId}": {
+      "put": {
+        "summary": "Выдать бейдж",
+        "tags": [
+          "Админ"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "badgeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Снять бейдж",
+        "tags": [
+          "Админ"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "badgeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{id}/admin": {
+      "put": {
+        "summary": "Назначить админа",
+        "tags": [
+          "Админ"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "isAdmin": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/admin/users/{id}/premium": {
+      "put": {
+        "summary": "Выдать/снять Премиум",
+        "tags": [
+          "Админ"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "isPremium": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/calls/config": {
+      "get": {
+        "summary": "STUN/TURN серверы для звонков",
+        "tags": [
+          "Звонки"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chats/search": {
+      "get": {
+        "summary": "Поиск открытых групп и каналов",
+        "tags": [
+          "Каналы"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список чатов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Chat"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/invite/{code}": {
+      "get": {
+        "summary": "Посмотреть группу или канал по ссылке-приглашению",
+        "tags": [
+          "Каналы"
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/invite/{code}/join": {
+      "post": {
+        "summary": "Вступить по ссылке-приглашению (в том числе в частные)",
+        "tags": [
+          "Каналы"
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chats/{id}/invite/reset": {
+      "post": {
+        "summary": "Новая ссылка-приглашение (старая перестаёт работать)",
+        "tags": [
+          "Каналы"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/contacts": {
+      "get": {
+        "summary": "Мои контакты",
+        "tags": [
+          "Пользователи"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/contacts/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Добавить в контакты",
+        "tags": [
+          "Пользователи"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Убрать из контактов",
+        "tags": [
+          "Пользователи"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/blocks": {
+      "get": {
+        "summary": "Заблокированные",
+        "tags": [
+          "Пользователи"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/blocks/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Заблокировать (убирает из контактов; он не сможет писать и звонить)",
+        "tags": [
+          "Пользователи"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Разблокировать",
+        "tags": [
+          "Пользователи"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/avatars/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Аватарка или обложка профиля (без токена)",
+        "tags": [
+          "Пользователи"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Картинка"
+          }
+        }
+      }
+    },
+    "/api/auth/login/2fa": {
+      "post": {
+        "summary": "Второй шаг входа: пароль двухэтапной проверки (после need2fa из /api/auth/login)",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "challengeId": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/me/2fa": {
+      "put": {
+        "summary": "Включить или сменить двухэтапную проверку",
+        "tags": [
+          "users"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountPassword": {
+                    "type": "string"
+                  },
+                  "currentPassword": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "hint": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Выключить двухэтапную проверку",
+        "tags": [
+          "users"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chats/{id}/wallpaper": {
+      "put": {
+        "summary": "Обои чата из фото (видят все участники). fileId: null — убрать",
+        "tags": [
+          "chats"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fileId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stickers": {
+      "get": {
+        "summary": "Мои наборы стикеров",
+        "tags": [
+          "stickers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stickers/packs": {
+      "post": {
+        "summary": "Создать набор",
+        "tags": [
+          "stickers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stickers/packs/{id}": {
+      "get": {
+        "summary": "Набор по id (для пересылки)",
+        "tags": [
+          "stickers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Переименовать свой набор",
+        "tags": [
+          "stickers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Удалить свой набор",
+        "tags": [
+          "stickers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stickers/packs/{id}/stickers": {
+      "post": {
+        "summary": "Добавить стикер (картинка, загруженная через /api/files)",
+        "tags": [
+          "stickers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fileId": {
+                    "type": "string"
+                  },
+                  "emoji": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stickers/packs/{id}/stickers/{sid}": {
+      "delete": {
+        "summary": "Убрать стикер из своего набора",
+        "tags": [
+          "stickers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stickers/packs/{id}/added": {
+      "put": {
+        "summary": "Добавить набор к себе",
+        "tags": [
+          "stickers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Убрать набор из своего списка",
+        "tags": [
+          "stickers"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/app/update": {
+      "get": {
+        "summary": "Свежая версия Android-приложения на этом сервере",
+        "tags": [
+          "app"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/app/apk": {
+      "get": {
+        "summary": "Скачать APK",
+        "tags": [
+          "app"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/admin/app": {
+      "post": {
+        "summary": "Загрузить свою сборку (multipart: apk, versionCode, versionName, notes)",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/app/sync": {
+      "post": {
+        "summary": "Забрать свежую сборку из UPDATE_SOURCE сейчас",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "summary": "Поиск пользователей для модерации (?q=); без q — заблокированные и ограниченные",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/ban": {
+      "post": {
+        "summary": "Забанить: days (0 или нет — навсегда), reason. Закрывает все сеансы",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "days": {
+                    "type": "number"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Разбанить",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/restrict": {
+      "post": {
+        "summary": "Ограничить: только чтение (нельзя писать, создавать чаты, загружать файлы)",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "days": {
+                    "type": "number"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Снять ограничение",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/chats": {
+      "get": {
+        "summary": "Поиск групп и каналов (?q=, в том числе частных); без q — заблокированные",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/chats/{id}/ban": {
+      "post": {
+        "summary": "Заблокировать группу или канал",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Разблокировать",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/chats/{id}": {
+      "delete": {
+        "summary": "Удалить группу или канал навсегда",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/log": {
+      "get": {
+        "summary": "Журнал модерации (последние 200 действий)",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/flux": {
+      "get": {
+        "summary": "Баланс FLUX, цена месяца Премиума и история",
+        "tags": [
+          "flux"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/premium/buy": {
+      "post": {
+        "summary": "Купить Премиум за FLUX (по умолчанию 1000 за месяц)",
+        "tags": [
+          "flux"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "months": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/usernames/prices": {
+      "get": {
+        "summary": "Цены дополнительных юзернеймов в FLUX: 3, 4, 5, 6–7 и от 8 символов",
+        "tags": [
+          "flux"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/usernames/check": {
+      "get": {
+        "summary": "Свободен ли юзернейм и сколько он стоит",
+        "tags": [
+          "flux"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/me/usernames": {
+      "post": {
+        "summary": "Купить дополнительный @юзернейм за FLUX (вход остаётся по основному)",
+        "tags": [
+          "flux"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/me/usernames/{name}": {
+      "delete": {
+        "summary": "Отказаться от дополнительного юзернейма (FLUX не возвращаются)",
+        "tags": [
+          "flux"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/gifts/shop": {
+      "get": {
+        "summary": "Витрина подарков (NFT)",
+        "tags": [
+          "flux"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/gifts/buy": {
+      "post": {
+        "summary": "Купить подарок себе или другому (toUserId)",
+        "tags": [
+          "flux"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "itemId": {
+                    "type": "string"
+                  },
+                  "toUserId": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{id}/gifts": {
+      "get": {
+        "summary": "Подарки пользователя",
+        "tags": [
+          "flux"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/gifts/{id}/transfer": {
+      "post": {
+        "summary": "Подарить свой подарок дальше",
+        "tags": [
+          "flux"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "toUserId": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gifts/{id}": {
+      "patch": {
+        "summary": "Скрыть, закрепить в профиле (pinned, до 6) или выставить на продажу (resalePrice, null — снять)",
+        "tags": [
+          "flux"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "hidden": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/flux": {
+      "post": {
+        "summary": "Выдать (или списать отрицательным числом) FLUX",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "integer"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/gift-items": {
+      "get": {
+        "summary": "Все подарки (NFT)",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "summary": "NFT-создатель: подарок из картинки",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "fileId": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "integer"
+                  },
+                  "supply": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/gift-items/{id}": {
+      "patch": {
+        "summary": "Цена или снятие с витрины",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "price": {
+                    "type": "integer"
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/reset": {
+      "post": {
+        "summary": "Массовый сброс: забрать FLUX, админки, галочки и бейджи у всех, кроме главного админа (только главный админ)",
+        "tags": [
+          "Админ"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "confirm"
+                ],
+                "properties": {
+                  "flux": {
+                    "type": "boolean"
+                  },
+                  "admins": {
+                    "type": "boolean"
+                  },
+                  "verified": {
+                    "type": "boolean",
+                    "description": "Галочки остаются у общего чата и канала новостей"
+                  },
+                  "badges": {
+                    "type": "boolean"
+                  },
+                  "confirm": {
+                    "type": "string",
+                    "description": "Слово СБРОС"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "flux": {
+                      "type": "integer"
+                    },
+                    "fluxTotal": {
+                      "type": "integer"
+                    },
+                    "admins": {
+                      "type": "integer"
+                    },
+                    "verifiedUsers": {
+                      "type": "integer"
+                    },
+                    "verifiedChats": {
+                      "type": "integer"
+                    },
+                    "badges": {
+                      "type": "integer"
+                    },
+                    "backup": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/gifts/market": {
+      "get": {
+        "summary": "Маркет: подарки, которые продают другие пользователи",
+        "tags": [
+          "Подарки"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/gifts/{id}/buy": {
+      "post": {
+        "summary": "Купить подарок у другого пользователя (FLUX уходят продавцу)",
+        "tags": [
+          "Подарки"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "price": {
+                    "type": "integer",
+                    "description": "Ожидаемая цена; если продавец её изменил — 409"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stories": {
+      "get": {
+        "tags": [
+          "Истории"
+        ],
+        "summary": "Лента историй: [{user, stories[], hasUnseen, lastAt}], свои первыми",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Истории"
+        ],
+        "summary": "Опубликовать историю или статус (живёт 24 часа)",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "bg": {
+                    "type": "string",
+                    "example": "#FF8800"
+                  },
+                  "emoji": {
+                    "type": "string"
+                  },
+                  "fileId": {
+                    "type": "string"
+                  },
+                  "privacy": {
+                    "type": "string",
+                    "enum": [
+                      "all",
+                      "contacts"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{id}/stories": {
+      "get": {
+        "tags": [
+          "Истории"
+        ],
+        "summary": "Активные истории пользователя",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stories/{id}": {
+      "delete": {
+        "tags": [
+          "Истории"
+        ],
+        "summary": "Удалить свою историю",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stories/{id}/view": {
+      "post": {
+        "tags": [
+          "Истории"
+        ],
+        "summary": "Отметить историю просмотренной",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/stories/{id}/reaction": {
+      "put": {
+        "tags": [
+          "Истории"
+        ],
+        "summary": "Реакция на историю",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "emoji": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stories/{id}/viewers": {
+      "get": {
+        "tags": [
+          "Истории"
+        ],
+        "summary": "Кто посмотрел (только автор)",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Badge": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "emoji": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "avatarFileId": {
+            "type": "string"
+          },
+          "isAdmin": {
+            "type": "boolean"
+          },
+          "isPremium": {
+            "type": "boolean"
+          },
+          "publicKey": {
+            "type": "string"
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "lastSeen": {
+            "type": "integer"
+          },
+          "badges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Badge"
+            }
+          },
+          "emojiStatus": {
+            "type": "string",
+            "nullable": true,
+            "description": "Эмодзи-статус (Премиум)"
+          },
+          "profileStyle": {
+            "type": "object",
+            "nullable": true,
+            "description": "Оформление профиля (Премиум): color1, color2, nameColor (#RRGGBB), pattern, bannerFileId, ring, effect, font"
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "chatId": {
+            "type": "string"
+          },
+          "seq": {
+            "type": "integer"
+          },
+          "senderId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "string"
+          },
+          "replyTo": {
+            "type": "string"
+          },
+          "forwardedFrom": {
+            "type": "string"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "integer"
+          },
+          "editedAt": {
+            "type": "integer"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "reactions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "type": "string"
+                },
+                "emoji": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Chat": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "direct",
+              "group",
+              "saved",
+              "channel"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "avatarFileId": {
+            "type": "string"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "$ref": "#/components/schemas/User"
+                },
+                "role": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "memberCount": {
+            "type": "integer"
+          },
+          "myRole": {
+            "type": "string"
+          },
+          "lastMessage": {
+            "$ref": "#/components/schemas/Message"
+          },
+          "unread": {
+            "type": "integer"
+          },
+          "lastReadSeq": {
+            "type": "integer"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "muted": {
+            "type": "boolean"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "isPublic": {
+            "type": "boolean",
+            "description": "Открытый (ищется, вступить может любой) или частный (только по ссылке)"
+          },
+          "inviteCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Код ссылки ryzik://join/<code>"
+          },
+          "streak": {
+            "$ref": "#/components/schemas/Streak"
+          }
+        }
+      },
+      "Auth": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "encryptedPrivateKey": {
+            "type": "string"
+          }
+        }
+      },
+      "Streak": {
+        "type": "object",
+        "nullable": true,
+        "description": "Огонёк чата. День (по Москве) засчитывается, когда написали хотя бы двое разных людей: в личке оба собеседника, в группе любые двое. Пропуск дня гасит огонёк.",
+        "properties": {
+          "days": {
+            "type": "integer"
+          },
+          "today": {
+            "type": "boolean",
+            "description": "Сегодня уже продлили"
+          },
+          "best": {
+            "type": "integer"
+          },
+          "todayWriters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "endsAt": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Когда погаснет, если сегодня не продлят"
+          }
+        }
+      },
+      "Story": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text",
+              "image",
+              "video"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "bg": {
+            "type": "string"
+          },
+          "emoji": {
+            "type": "string"
+          },
+          "fileId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Файл открыт, отдаётся без токена через /api/avatars/{fileId}, пока история жива"
+          },
+          "privacy": {
+            "type": "string",
+            "enum": [
+              "all",
+              "contacts"
+            ]
+          },
+          "createdAt": {
+            "type": "integer"
+          },
+          "expiresAt": {
+            "type": "integer"
+          },
+          "seen": {
+            "type": "boolean"
+          },
+          "myReaction": {
+            "type": "string",
+            "nullable": true
+          },
+          "views": {
+            "type": "integer",
+            "description": "Только у своих историй"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "ryzikchat-server",
+  "version": "0.8.15",
+  "description": "Собственный сервер RyzikChat: REST API + WebSocket",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node src/run.js",
+    "test": "node --test test/*.test.js",
+    "serve": "node src/index.js",
+    "fuzz": "node test/fuzz.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^2.0.2",
+    "ws": "^8.18.0"
+  }
+}
