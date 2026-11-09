@@ -1,4 +1,4 @@
-export const SERVER = process.env.RYZIKCHAT_SERVER || 'https://ryzikchat.serveousercontent.com';
+export const SERVER = process.env.RYZIKCHAT_SERVER || 'https://ryzik3489-ryzikchat.hf.space';
 export const RELEASE = 'https://github.com/kataevilya/RyzikChat/releases/download/ryzikchat-latest';
 export const APK_URL = `${RELEASE}/RyzikChat.apk`;
 

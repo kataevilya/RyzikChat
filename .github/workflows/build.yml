@@ -1,0 +1,145 @@
+name: Сборка
+
+on:
+  push:
+    branches: [main, ryzikchat]
+    tags: ["v*"]
+    # Загрузка zip с кодом сама сборку не запускает: её запускает «Распаковка архива».
+    paths-ignore: ["*.zip"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: Сервер (тесты)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm test
+
+  android:
+    name: Android (APK)
+    # Релиз с сервером выходит только после зелёных тестов сервера: серверы обновляются из него сами.
+    needs: server
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      # Ключа подписи в репозитории нет (он публичный): берём его из секрета.
+      - name: Ключ подписи (секрет RYZIK_KEYSTORE_BASE64)
+        env:
+          KEYSTORE_B64: ${{ secrets.RYZIK_KEYSTORE_BASE64 }}
+        run: |
+          chmod +x gradlew
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::Нет секрета RYZIK_KEYSTORE_BASE64 (Settings → Secrets and variables → Actions). Без него APK не встанет поверх старой версии."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_B64" | tr -d ' \r\n' | base64 -d > app/ryzik-release.jks
+          keytool -list -keystore app/ryzik-release.jks -storepass "${RYZIK_STORE_PASSWORD:-ryzikchat}" -alias ryzik > /dev/null \
+            || { echo "::error::Ключ из секрета RYZIK_KEYSTORE_BASE64 не открывается: вставьте содержимое файла ещё раз целиком."; exit 1; }
+      - name: Кэш шрифта эмодзи
+        id: emoji-cache
+        uses: actions/cache@v4
+        with:
+          path: android/app/src/main/assets/emoji/ryzik_emoji.ttf
+          key: emoji-font-${{ hashFiles('tools/emoji/**') }}
+      - uses: actions/setup-python@v5
+        if: steps.emoji-cache.outputs.cache-hit != 'true'
+        with:
+          python-version: "3.12"
+      - name: Шрифт эмодзи в стиле iOS (Fluent Emoji 3D)
+        if: steps.emoji-cache.outputs.cache-hit != 'true'
+        working-directory: .
+        run: |
+          sudo apt-get install -y -q pngquant
+          pip install -q fonttools pillow flatbuffers
+          git clone -q --depth 1 --filter=blob:none --no-checkout https://github.com/microsoft/fluentui-emoji /tmp/fluent
+          git -C /tmp/fluent sparse-checkout set --no-cone '/assets/*/metadata.json' '/assets/*/3D/*.png' '/assets/*/*/3D/*.png'
+          git -C /tmp/fluent checkout -q
+          python3 tools/emoji/build_font.py /tmp/fluent/assets android/app/src/main/assets/emoji/ryzik_emoji.ttf
+      - name: Тесты
+        run: |
+          set -o pipefail
+          ./gradlew testDebugUnitTest --stacktrace 2>&1 | tee -a gradle.log
+      - name: Сборка APK
+        run: |
+          set -o pipefail
+          ./gradlew assembleRelease --stacktrace 2>&1 | tee -a gradle.log
+      # Ошибки компиляции — в аннотации запуска, чтобы их было видно без скачивания логов.
+      - name: Ошибки сборки
+        if: failure()
+        run: |
+          grep -E '^e: |error:|FAILED' gradle.log | head -40 | sed 's/^/::error::/' || true
+      - name: Переименовать APK
+        run: cp app/build/outputs/apk/release/app-release.apk RyzikChat.apk
+      - name: Описание обновления (update.json)
+        env:
+          NOTES: ${{ github.event.head_commit.message }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re
+          g = open('app/build.gradle.kts', encoding='utf-8').read()
+          code = int(re.search(r'versionCode\s*=\s*(\d+)', g).group(1))
+          name = re.search(r'versionName\s*=\s*"([^"]+)"', g).group(1)
+          notes = (os.environ.get('NOTES') or '').strip()
+          # Служебные строки коммита пользователю не показываем.
+          notes = '\n'.join(l for l in notes.splitlines() if not re.match(r'(Co-Authored-By|Claude-Session|Signed-off-by):', l)).strip()
+          json.dump({
+              'versionCode': code, 'versionName': name, 'notes': notes[:2000],
+              'apk': 'https://github.com/' + os.environ['REPO'] + '/releases/download/ryzikchat-latest/RyzikChat.apk',
+          }, open('update.json', 'w', encoding='utf-8'), ensure_ascii=False)
+          PY
+          cat update.json
+      - name: Сервер для самообновления (server.json и ryzikchat-server.tar.gz)
+        working-directory: .
+        run: |
+          git archive --format=tar.gz --prefix=ryzikchat-server/ -o android/ryzikchat-server.tar.gz HEAD:server
+          node -e "const p=require('./server/package.json');require('fs').writeFileSync('android/server.json',JSON.stringify({version:p.version,commit:process.env.GITHUB_SHA}))"
+          cat android/server.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RyzikChat-apk
+          path: android/RyzikChat.apk
+      - name: Релиз (для тегов v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/RyzikChat.apk
+      - name: Свежая сборка ветки ryzikchat
+        if: github.ref == 'refs/heads/ryzikchat' || github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ryzikchat-latest
+          name: RyzikChat (свежая сборка)
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          body: "APK RyzikChat из ветки ${{ github.ref_name }}, коммит ${{ github.sha }}."
+          files: |
+            android/RyzikChat.apk
+            android/update.json
+            android/server.json
+            android/ryzikchat-server.tar.gz

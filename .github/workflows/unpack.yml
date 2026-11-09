@@ -1,0 +1,57 @@
+name: Распаковка архива
+
+# Загрузи zip с кодом в корень репозитория (Add file → Upload files):
+# архив распакуется и удалится, код закоммитится, запустятся сборки.
+on:
+  push:
+    branches: [main]
+    paths: ["*.zip"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  unpack:
+    name: Распаковать zip и запустить сборки
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Распаковать и закоммитить
+        run: |
+          set -euo pipefail
+          shopt -s nullglob dotglob
+          zips=(*.zip)
+          if [ ${#zips[@]} -eq 0 ]; then echo "В корне нет zip"; exit 0; fi
+          for z in "${zips[@]}"; do
+            rm -rf /tmp/u && mkdir -p /tmp/u
+            unzip -q -o "$z" -d /tmp/u
+            git rm -q "$z"
+            rm -rf /tmp/u/__MACOSX
+            src=/tmp/u
+            items=(/tmp/u/*)
+            if [ ${#items[@]} -eq 1 ] && [ -d "${items[0]}" ]; then src="${items[0]}"; fi
+            parts=()
+            for d in step1 step2 step3; do
+              if [ -d "$src/$d" ]; then parts+=("$src/$d"); fi
+            done
+            if [ ${#parts[@]} -eq 0 ]; then parts=("$src"); fi
+            for p in "${parts[@]}"; do
+              # Файлы workflow токен Actions менять не может — их не трогаем.
+              rm -rf "$p/.git" "$p/.github/workflows"
+              cp -a "$p"/. .
+            done
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Код из ${zips[*]}"
+          git push
+      - name: Запустить сборки
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for w in build.yml desktop.yml; do
+            gh workflow run "$w" --ref main -R "$GITHUB_REPOSITORY" || echo "::warning::Не удалось запустить $w"
+          done

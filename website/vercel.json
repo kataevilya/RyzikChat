@@ -6,7 +6,7 @@
     { "source": "/stats", "destination": "/stats.html" },
     { "source": "/download", "destination": "/api/download" },
     { "source": "/app", "destination": "/app/index.html" },
-    { "source": "/rc/:path*", "destination": "https://ryzikchat.serveousercontent.com/:path*" }
+    { "source": "/rc/:path*", "destination": "https://ryzik3489-ryzikchat.hf.space/:path*" }
   ],
   "headers": [
     { "source": "/api/(.*)", "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }] },

@@ -18,7 +18,7 @@
 
 Если сервер переехал, поменяйте адрес и в `RYZIKCHAT_SERVER`, и в правиле `/rc/:path*` в `vercel.json` (rewrite не умеет читать переменные окружения).
 
-Статистику отдаёт сервер RyzikChat: `GET https://ryzikchat.serveousercontent.com/api/stats` (нужна версия сервера 0.8.6+).
+Статистику отдаёт сервер RyzikChat: `GET https://ryzik3489-ryzikchat.hf.space/api/stats` (нужна версия сервера 0.8.6+).
 Функции `api/stats.js` и `api/version.js` проксируют данные, чтобы браузеру не мешали CORS и страница-предупреждение туннеля.
 
 ## Как выложить на Vercel
