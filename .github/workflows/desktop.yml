@@ -10,17 +10,15 @@ on:
 permissions:
   contents: write
 
+# Один релиз за раз: Android и ПК не перезаписывают файлы друг друга.
 concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: true
+  group: ryzikchat-release
+  cancel-in-progress: false
 
 jobs:
   windows:
     name: Windows (установщик)
     runs-on: windows-latest
-    concurrency:
-      group: ryzikchat-release
-      cancel-in-progress: false
     defaults:
       run:
         working-directory: desktop
@@ -54,7 +52,7 @@ jobs:
           # Подробности jpackage — одной аннотацией (их не больше 10 на шаг).
           log=$(cat build/compose/logs/*/*-err.txt build/compose/logs/*/*-out.txt 2>/dev/null | tail -60)
           log="${log//'%'/'%25'}"; log="${log//$'\r'/}"; log="${log//$'\n'/'%0A'}"
-          echo "::error title=jpackage::${log}" 
+          echo "::error title=jpackage::${log}"
       - name: Файлы для релиза
         shell: pwsh
         run: |
@@ -71,26 +69,10 @@ jobs:
             desktop/RyzikChat-Setup.exe
             desktop/RyzikChat-Setup.msi
             desktop/RyzikChat-Windows-portable.zip
-      - name: Релиз (свежая сборка)
-        if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ryzikchat-latest
-          name: RyzikChat (свежая сборка)
-          prerelease: true
-          make_latest: false
-          overwrite_files: true
-          files: |
-            desktop/RyzikChat-Setup.exe
-            desktop/RyzikChat-Setup.msi
-            desktop/RyzikChat-Windows-portable.zip
 
   linux:
     name: Linux (AppImage и .deb)
     runs-on: ubuntu-22.04
-    concurrency:
-      group: ryzikchat-release
-      cancel-in-progress: false
     defaults:
       run:
         working-directory: desktop
@@ -143,6 +125,19 @@ jobs:
             desktop/RyzikChat-x86_64.AppImage
             desktop/RyzikChat-amd64.deb
             desktop/RyzikChat-Linux-portable.tar.gz
+
+  release:
+    name: Релиз (Windows и Linux)
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: RyzikChat-*
+          path: release
+          merge-multiple: true
+      - name: Показать файлы
+        run: ls -la release
       - name: Релиз (свежая сборка)
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
@@ -152,7 +147,4 @@ jobs:
           prerelease: true
           make_latest: false
           overwrite_files: true
-          files: |
-            desktop/RyzikChat-x86_64.AppImage
-            desktop/RyzikChat-amd64.deb
-            desktop/RyzikChat-Linux-portable.tar.gz
+          files: release/*

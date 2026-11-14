@@ -13,8 +13,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: true
+  group: ryzikchat-release
+  cancel-in-progress: false
 
 jobs:
   server:
@@ -36,9 +36,6 @@ jobs:
     # Релиз с сервером выходит только после зелёных тестов сервера: серверы обновляются из него сами.
     needs: server
     runs-on: ubuntu-latest
-    concurrency:
-      group: ryzikchat-release
-      cancel-in-progress: false
     defaults:
       run:
         working-directory: android
