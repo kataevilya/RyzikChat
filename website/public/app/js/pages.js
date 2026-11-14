@@ -79,30 +79,6 @@ export function profileTab() {
   const body = h('div.scroll');
   const el = h('div.screen', null, topBar({ title: 'Профиль', large: true, actions: [iconBtn('edit', 'Изменить', () => editProfile())] }), body);
 
-  function aiSettings() {
-    const url = field('Ссылка на API', { value: settings.aiUrl || '', placeholder: 'https://api.example.com/v1' });
-    const key = field('API-ключ', { value: settings.aiKey || '', type: 'password' });
-    const model = field('Модель', { value: settings.aiModel || 'gpt-4o-mini', placeholder: 'gpt-4o-mini' });
-    dialog({
-      title: 'AI-помощник',
-      icon: 'auto_awesome',
-      wide: true,
-      body: h('div', null, url.el, key.el, model.el,
-        h('p.hint', null, 'Любой OpenAI-совместимый API. Ключ хранится только в этом браузере. Кнопка AI появляется в чате, когда текста становится три строки.')),
-      actions: [
-        { label: 'Отмена' },
-        { label: 'Сохранить', primary: true, run: () => {
-          saveSettings({
-            aiUrl: String(url.input.value || '').trim(),
-            aiKey: String(key.input.value || '').trim(),
-            aiModel: String(model.input.value || '').trim() || 'gpt-4o-mini',
-          });
-          render();
-        } },
-      ],
-    });
-  }
-
   function render() {
     const me = store.me;
     if (!me) return;
@@ -380,6 +356,30 @@ async function showFingerprint(user) {
 export function settingsTab() {
   const body = h('div.scroll');
   const el = h('div.screen', null, topBar({ title: 'Настройки', large: true }), body);
+
+  function aiSettings() {
+    const url = field('Ссылка на API', { value: settings.aiUrl || '', placeholder: 'https://api.example.com/v1' });
+    const key = field('API-ключ', { value: settings.aiKey || '', type: 'password' });
+    const model = field('Модель', { value: settings.aiModel || 'gpt-4o-mini', placeholder: 'gpt-4o-mini' });
+    dialog({
+      title: 'AI-помощник',
+      icon: 'auto_awesome',
+      wide: true,
+      body: h('div', null, url.el, key.el, model.el,
+        h('p.hint', null, 'Любой OpenAI-совместимый API. Ключ хранится только в этом браузере. Кнопка AI появляется в чате, когда текста становится три строки.')),
+      actions: [
+        { label: 'Отмена' },
+        { label: 'Сохранить', primary: true, run: () => {
+          saveSettings({
+            aiUrl: String(url.input.value || '').trim(),
+            aiKey: String(key.input.value || '').trim(),
+            aiModel: String(model.input.value || '').trim() || 'gpt-4o-mini',
+          });
+          render();
+        } },
+      ],
+    });
+  }
 
   function render() {
     const me = store.me;
