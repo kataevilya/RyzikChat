@@ -661,15 +661,6 @@ export function createApp({ db, dataDir, hub, adminUsernames = [], updateSource 
     res.json(seasonView());
   });
 
-  app.put('/api/admin/season', adminOnly, (req, res) => {
-    const season = String(req.body?.season ?? '');
-    if (!SEASONS.has(season)) throw new HttpError(400, 'bad_season', 'Сезон: winter, halloween, newyear или none');
-    db.prepare(`INSERT INTO app_settings (key, value, updated_at) VALUES ('season', ?, ?)
-      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`).run(season, now());
-    const view = seasonView();
-    hub.broadcastAll({ type: 'season.updated', ...view });
-    res.json(view);
-  });
 
   // Публичная статистика для сайта: только числа, без данных пользователей.
   let statsCache = null;
@@ -848,6 +839,16 @@ export function createApp({ db, dataDir, hub, adminUsernames = [], updateSource 
   });
 
   app.use('/api', auth);
+
+  app.put('/api/admin/season', adminOnly, (req, res) => {
+    const season = String(req.body?.season ?? '');
+    if (!SEASONS.has(season)) throw new HttpError(400, 'bad_season', 'Сезон: winter, halloween, newyear или none');
+    db.prepare(`INSERT INTO app_settings (key, value, updated_at) VALUES ('season', ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`).run(season, now());
+    const view = seasonView();
+    hub.broadcastAll({ type: 'season.updated', ...view });
+    res.json(view);
+  });
 
   app.post('/api/auth/logout', (req, res) => {
     db.prepare('DELETE FROM sessions WHERE token = ?').run(req.token);
