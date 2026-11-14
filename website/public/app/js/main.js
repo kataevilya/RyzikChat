@@ -210,5 +210,25 @@ store.on('reaction', (chat, who, emoji) => {
 // ---------- Старт ----------
 
 initCalls();
+
+// Зимний снег. Отключается в настройках («Сезонное оформление»).
+(() => {
+  const box = document.getElementById('snow-layer');
+  if (!box) return;
+  if (settings.seasonal === false || matchMedia('(prefers-reduced-motion: reduce)').matches) { box.style.display = 'none'; return; }
+  const count = innerWidth < 700 ? 30 : 58;
+  for (let i = 0; i < count; i++) {
+    const f = document.createElement('i');
+    const size = 1.5 + Math.random() * 3.6;
+    f.style.width = f.style.height = size + 'px';
+    f.style.left = Math.random() * 100 + '%';
+    f.style.opacity = (0.2 + Math.random() * 0.55).toFixed(2);
+    f.style.animationDuration = (10 + Math.random() * 15).toFixed(1) + 's';
+    f.style.animationDelay = (-Math.random() * 22).toFixed(1) + 's';
+    f.style.setProperty('--sway', (Math.random() * 70 - 35).toFixed(0) + 'px');
+    box.append(f);
+  }
+})();
+
 store.restore().catch((e) => { console.error(e); store.setAuth('out'); });
 

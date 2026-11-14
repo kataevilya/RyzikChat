@@ -116,6 +116,14 @@ class ApiClient(
 
     suspend fun health(): Boolean = runCatching { execute(request("/api/health").get().build()); true }.getOrDefault(false)
 
+    // ---------- сезонное оформление ----------
+
+    suspend fun season(): SeasonInfo = call("GET", "/api/season", null, SeasonInfo.serializer())
+
+    suspend fun setSeason(season: String): SeasonInfo = call(
+        "PUT", "/api/admin/season", buildJsonObject { put("season", season) }, SeasonInfo.serializer(),
+    )
+
     suspend fun register(username: String, displayName: String, password: String, publicKey: String, encryptedPrivateKey: String, device: String) =
         call("POST", "/api/auth/register", buildJsonObject {
             put("username", username)

@@ -62,6 +62,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import app.ryzik.chat.data.AppSettings
 import app.ryzik.chat.data.AuthState
+import app.ryzik.chat.data.SeasonStyle
 import app.ryzik.chat.notify.Notifier
 import app.ryzik.chat.platform.Nav
 import app.ryzik.chat.platform.Platform
@@ -92,6 +93,7 @@ import app.ryzik.chat.ui.settings.SettingsScreen
 import app.ryzik.chat.ui.settings.SettingsSection
 import app.ryzik.chat.ui.settings.SettingsSectionScreen
 import app.ryzik.chat.ui.theme.RyzikTheme
+import app.ryzik.chat.ui.theme.SeasonalOverlay
 import app.ryzik.chat.ui.welcome.WelcomeScreen
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -164,8 +166,10 @@ private fun AppRoot(app: RyzikApp) {
     val settings by app.prefs.settings.collectAsState(initial = null)
     val auth by app.repo.auth.collectAsState()
     val adding by app.repo.addingAccount.collectAsState()
+    val season by app.repo.season.collectAsState()
     val s = settings ?: AppSettings()
-    RyzikTheme(s) {
+    val seasonStyle = if (s.seasonalTheme) season.style else SeasonStyle.None
+    RyzikTheme(s, seasonStyle) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
             if (settings == null || auth is AuthState.Loading) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -177,6 +181,8 @@ private fun AppRoot(app: RyzikApp) {
                 ) { loggedIn ->
                     if (loggedIn) MainNav() else OnboardingNav(adding)
                 }
+                // Зимний снег (или другой сезон) поверх интерфейса.
+                SeasonalOverlay(seasonStyle, s.animations)
                 val pack by StickerViewer.packId.collectAsState()
                 if (pack != null && auth is AuthState.LoggedIn) {
                     StickerPackDialog(pack!!, onDismiss = { StickerViewer.close() })

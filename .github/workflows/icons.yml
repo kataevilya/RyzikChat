@@ -1,0 +1,41 @@
+name: Зимние иконки
+
+# Собирает PNG/ICO для сайта, Windows и Linux из логотипа.
+# Android-иконка — вектор в репозитории и здесь не нужна.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/make_winter_icon.py"
+      - ".github/workflows/icons.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  icons:
+    name: Собрать и закоммитить
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Иконки
+        run: |
+          python -m pip install --quiet pillow
+          python tools/make_winter_icon.py
+      - name: Коммит
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add website/public desktop/src/main/resources/icon.png desktop/icon.ico
+          if git diff --cached --quiet; then echo "Иконки уже зимние"; exit 0; fi
+          git commit -m "Зимние иконки"
+          git push

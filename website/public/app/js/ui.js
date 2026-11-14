@@ -64,7 +64,7 @@ export const SEEDS = [
 ];
 export const PREMIUM_SEEDS_FROM = 8;
 
-const DEFAULT_SETTINGS = { theme: 'system', seed: 0, fontScale: 1, bigEmoji: true, enterToSend: true, notifications: true, sounds: true, radius: 20 };
+const DEFAULT_SETTINGS = { theme: 'system', seed: 0, fontScale: 1, bigEmoji: true, enterToSend: true, notifications: true, sounds: true, radius: 20, seasonal: true, aiUrl: '', aiKey: '', aiModel: 'gpt-4o-mini' };
 
 export const settings = (() => {
   try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem('rc.settings') || '{}') }; } catch { return { ...DEFAULT_SETTINGS }; }

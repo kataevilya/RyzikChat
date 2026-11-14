@@ -17,6 +17,9 @@ const newId = () => crypto.randomUUID();
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,32}$/;
 const MESSAGE_TYPES = new Set(['text', 'image', 'video', 'file', 'voice', 'square', 'sticker', 'call']);
+/** Сезонные оформления, которые администратор включает для всех. */
+const SEASONS = new Set(['none', 'winter', 'halloween', 'newyear']);
+const DEFAULT_SEASON = 'winter';
 const FREE_FILE_MB = Number(process.env.FREE_FILE_MB ?? 200);
 const PREMIUM_FILE_MB = Number(process.env.MAX_FILE_MB ?? 2048);
 const MAX_PAYLOAD = 64 * 1024;
@@ -643,6 +646,30 @@ export function createApp({ db, dataDir, hub, adminUsernames = [], updateSource 
   }
 
   app.get('/api/health', (_req, res) => res.json({ ok: true, name: 'RyzikChat', version: serverVersion(), apiVersion: 1 }));
+
+  // ---------- сезонное оформление ----------
+
+  /** Текущий сезон. Читают все клиенты, в том числе сайт без входа. */
+  function seasonView() {
+    const row = db.prepare("SELECT value, updated_at FROM app_settings WHERE key = 'season'").get();
+    return { season: SEASONS.has(row?.value) ? row.value : DEFAULT_SEASON, updatedAt: row?.updated_at ?? 0 };
+  }
+
+  app.get('/api/season', (_req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=60');
+    res.json(seasonView());
+  });
+
+  app.put('/api/admin/season', adminOnly, (req, res) => {
+    const season = String(req.body?.season ?? '');
+    if (!SEASONS.has(season)) throw new HttpError(400, 'bad_season', 'Сезон: winter, halloween, newyear или none');
+    db.prepare(`INSERT INTO app_settings (key, value, updated_at) VALUES ('season', ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`).run(season, now());
+    const view = seasonView();
+    hub.broadcastAll({ type: 'season.updated', ...view });
+    res.json(view);
+  });
 
   // Публичная статистика для сайта: только числа, без данных пользователей.
   let statsCache = null;
@@ -1791,6 +1818,11 @@ export function createApp({ db, dataDir, hub, adminUsernames = [], updateSource 
   const allBadges = () => db.prepare('SELECT id, emoji, title, description, color FROM badges ORDER BY created_at').all();
 
   app.get('/api/badges', (_req, res) => res.json(allBadges()));
+
+  // Полный список сезонов для админ-панели.
+  app.get('/api/admin/seasons', adminOnly, (_req, res) => {
+    res.json({ current: seasonView().season, seasons: [...SEASONS] });
+  });
 
   // Администратор может выложить свою сборку приложения — её получат все телефоны.
   const apkUpload = multer({ dest: updatesDir, limits: { fileSize: 300 * 1024 * 1024 } });

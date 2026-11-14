@@ -1096,3 +1096,16 @@ test('не больше трёх аккаунтов с одного IP и чис
   // Удалённые аккаунты больше не занимают место: из этой сети снова можно зарегистрироваться.
   assert.equal((await regAt(spamNet, 'newbie', 'Новичок')).status, 201);
 });
+
+test('сезонное оформление: админ включает для всех, неверный сезон отклоняется', async () => {
+  const start = await api('GET', '/api/season');
+  assert.equal(start.status, 200);
+  assert.equal(start.body.season, 'winter', 'по умолчанию зима');
+  const changed = await api('PUT', '/api/admin/season', { season: 'halloween' }, aliceToken);
+  assert.equal(changed.status, 200);
+  assert.equal(changed.body.season, 'halloween');
+  assert.equal((await api('GET', '/api/season')).body.season, 'halloween');
+  assert.equal((await api('PUT', '/api/admin/season', { season: 'summer' }, aliceToken)).status, 400);
+  assert.equal((await api('PUT', '/api/admin/season', { season: 'none' })).status, 401);
+  assert.equal((await api('PUT', '/api/admin/season', { season: 'winter' }, aliceToken)).body.season, 'winter');
+});

@@ -104,6 +104,13 @@ export function openDb(dataDir) {
       granted_at INTEGER NOT NULL,
       PRIMARY KEY (user_id, badge_id)
     );
+
+    -- Общие настройки приложения (сезонное оформление и т.п.).
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
   `);
   migrate(db);
   return db;

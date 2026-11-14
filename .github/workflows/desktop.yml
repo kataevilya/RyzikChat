@@ -29,6 +29,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.11.1"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Зимняя иконка
+        shell: bash
+        run: |
+          python -m pip install --quiet pillow
+          python ../tools/make_winter_icon.py
       - name: Сборка установщика
         shell: bash
         run: |
@@ -87,6 +95,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.11.1"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Зимняя иконка
+        run: |
+          python -m pip install --quiet pillow
+          python ../tools/make_winter_icon.py
       - name: Сборка .deb и папки приложения
         run: |
           set -o pipefail

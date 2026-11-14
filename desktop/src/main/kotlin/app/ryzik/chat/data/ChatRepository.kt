@@ -107,6 +107,10 @@ class ChatRepository(val prefs: Prefs) {
     private val _chatsLoading = MutableStateFlow(false)
     val chatsLoading: StateFlow<Boolean> = _chatsLoading.asStateFlow()
 
+    /** Сезон, включённый администратором для всех. По умолчанию — зима. */
+    private val _season = MutableStateFlow(SeasonInfo())
+    val season: StateFlow<SeasonInfo> = _season.asStateFlow()
+
     private val messageFlows = ConcurrentHashMap<String, MutableStateFlow<List<UiMessage>>>()
     private val hasMore = ConcurrentHashMap<String, Boolean>()
     // ConcurrentHashMap не хранит null, поэтому неудачную расшифровку храним в обёртке.
@@ -179,6 +183,7 @@ class ChatRepository(val prefs: Prefs) {
     private suspend fun restore() {
         val s = prefs.session.first()
         api.baseUrl = s.serverUrl
+        scope.launch { loadSeason() }
         if (s.token == null || s.wrappedPrivateKey == null) {
             _auth.value = AuthState.LoggedOut
             return
@@ -314,6 +319,7 @@ class ChatRepository(val prefs: Prefs) {
         scope.launch { prefs.updateAccountInfo(me.id, me.displayName, me.avatarFileId) }
         _auth.value = AuthState.LoggedIn(me)
         scope.launch { refreshChats() }
+        scope.launch { loadSeason() }
         scope.launch { runCatching { refreshContacts() } }
         scope.launch { runCatching { refreshStickers() } }
         connectSocket()
@@ -646,6 +652,16 @@ class ChatRepository(val prefs: Prefs) {
     suspend fun userStories(userId: String) = api.userStories(userId)
 
     // ================= Чаты =================
+
+    /** Текущий сезон с сервера. Если сети нет — остаётся прежний (по умолчанию зима). */
+    suspend fun loadSeason() {
+        runCatching { api.season() }.getOrNull()?.let { _season.value = it }
+    }
+
+    /** Только администратор: включить сезон для всех. */
+    suspend fun setSeasonGlobally(style: SeasonStyle) {
+        _season.value = api.setSeason(style.key)
+    }
 
     /** quiet — без индикатора загрузки (опрос раз в несколько секунд). */
     suspend fun refreshChats(quiet: Boolean = false) {
@@ -1368,6 +1384,7 @@ class ChatRepository(val prefs: Prefs) {
                 _notices.tryEmit(Notice.ReactionOnMine(c, msgId, who, emoji, preview))
             }
             "chat.updated" -> ev.chatId?.let { id -> runCatching { loadChat(id) } }
+            "season.updated" -> _season.value = SeasonInfo(ev.season ?: "winter", ev.updatedAt ?: 0)
             "chat.streak" -> {
                 val id = ev.chatId ?: return
                 chatsMutex.withLock { _chats.update { l -> l.map { if (it.id == id) it.copy(streak = ev.streak) else it } } }

@@ -1,8 +1,15 @@
 package app.ryzik.chat.ui.theme
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -11,8 +18,15 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -24,7 +38,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
 import app.ryzik.chat.data.AppSettings
+import app.ryzik.chat.data.SeasonStyle
 import app.ryzik.chat.data.ThemeMode
+import kotlin.math.sin
+import kotlin.random.Random
+
+/** Сезон, выбранный администратором (с учётом личного выключения). */
+val LocalSeason = compositionLocalOf { SeasonStyle.None }
 
 /** Цвета, из которых можно собрать тему, если Material You (цвета обоев) выключен. */
 val SeedColors = listOf(
@@ -151,7 +171,7 @@ private val AppShapes = Shapes(
 )
 
 @Composable
-fun RyzikTheme(settings: AppSettings, content: @Composable () -> Unit) {
+fun RyzikTheme(settings: AppSettings, season: SeasonStyle = SeasonStyle.None, content: @Composable () -> Unit) {
     val dark = when (settings.themeMode) {
         ThemeMode.System -> isSystemInDarkTheme()
         ThemeMode.Light -> false
@@ -159,6 +179,8 @@ fun RyzikTheme(settings: AppSettings, content: @Composable () -> Unit) {
     }
     // Цветов из обоев (Material You) на ПК нет: всегда собираем тему из выбранного цвета.
     var scheme = schemeFromSeed(SeedColors[settings.seedColor.coerceIn(SeedColors.indices)].first, dark)
+    // Сезонные акценты.
+    scheme = scheme.seasonal(season, dark)
     if (dark && settings.amoled) {
         scheme = scheme.copy(
             background = Color.Black, surface = Color.Black,
@@ -173,6 +195,7 @@ fun RyzikTheme(settings: AppSettings, content: @Composable () -> Unit) {
         // (экран входа, приветствие) остаётся чёрным даже в тёмной теме.
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.material3.LocalContentColor provides animated.onSurface,
+            LocalSeason provides season,
             content = content,
         )
     }
@@ -198,17 +221,119 @@ private fun ColorScheme.animated(): ColorScheme {
     )
 }
 
-/** Обои чата: мягкие градиенты в цветах темы. */
+/** Сезонные акценты: заметно меняют тему. */
+private fun ColorScheme.seasonal(season: SeasonStyle, dark: Boolean): ColorScheme {
+    val seed = when (season) {
+        SeasonStyle.Winter -> Color(0xFF5AA9E6)
+        SeasonStyle.Halloween -> Color(0xFFFF8A1F)
+        SeasonStyle.NewYear -> Color(0xFF2FA36B)
+        SeasonStyle.None -> return this
+    }
+    val s = schemeFromSeed(seed, dark)
+    return copy(
+        primary = s.primary, onPrimary = s.onPrimary,
+        primaryContainer = s.primaryContainer, onPrimaryContainer = s.onPrimaryContainer,
+        secondary = s.secondary, onSecondary = s.onSecondary,
+        secondaryContainer = s.secondaryContainer, onSecondaryContainer = s.onSecondaryContainer,
+        tertiary = s.tertiary, onTertiary = s.onTertiary,
+        tertiaryContainer = s.tertiaryContainer, onTertiaryContainer = s.onTertiaryContainer,
+    )
+}
+
+/** Обои чата: мягкие градиенты в цветах темы и зимние наборы. */
 @Composable
 fun wallpaperColors(index: Int): List<Color> {
     val c = MaterialTheme.colorScheme
+    val season = LocalSeason.current
+    val light = c.background.luminance() > 0.5f
     return when (index) {
+        0 -> when (season) {
+            SeasonStyle.Winter -> if (light) listOf(Color(0xFFEAF4FF), Color(0xFFC9E0F5), Color(0xFF9FBEDC))
+                else listOf(Color(0xFF07111F), Color(0xFF10263D), Color(0xFF1C3A57))
+            SeasonStyle.Halloween -> if (light) listOf(Color(0xFFFFE7CC), Color(0xFFFFC48A), Color(0xFFB46BC4))
+                else listOf(Color(0xFF1A0E1F), Color(0xFF3A1836), Color(0xFF6B2A1F))
+            SeasonStyle.NewYear -> if (light) listOf(Color(0xFFEAF7EE), Color(0xFFC7E8D2), Color(0xFFE3C97A))
+                else listOf(Color(0xFF06140F), Color(0xFF0E2B1E), Color(0xFF4A1F24))
+            SeasonStyle.None -> listOf(c.surface, c.surface)
+        }
         1 -> listOf(c.primaryContainer.copy(alpha = 0.55f), c.tertiaryContainer.copy(alpha = 0.55f))
         2 -> listOf(c.secondaryContainer.copy(alpha = 0.6f), c.surface)
         3 -> listOf(c.tertiaryContainer.copy(alpha = 0.5f), c.surface, c.primaryContainer.copy(alpha = 0.5f))
         4 -> listOf(c.surfaceContainerHighest, c.surfaceContainerLowest)
+        5 -> listOf(Color(0xFFDCEBFA), Color(0xFFA9C8E8), Color(0xFF6E93BC))
+        6 -> listOf(Color(0xFF0E1B33), Color(0xFF1D3557), Color(0xFF2E5077))
+        7 -> listOf(Color(0xFF06121F), Color(0xFF0E3B4A), Color(0xFF1B6B5A), Color(0xFF4B2E83))
+        8 -> listOf(Color(0xFFE8F7FF), Color(0xFFBFE6F7), Color(0xFF8FC1DA))
+        9 -> listOf(Color(0xFF0A0F1E), Color(0xFF141C33), Color(0xFF27324F))
+        10 -> listOf(Color(0xFF0C1E1A), Color(0xFF17453A), Color(0xFF2C6E54))
+        11 -> listOf(Color(0xFF070A18), Color(0xFF131A3A), Color(0xFF2A1F52))
         else -> listOf(c.surface, c.surface)
     }
 }
 
-val WallpaperNames = listOf("Без обоев", "Закат", "Туман", "Аврора", "Графит")
+val WallpaperNames = listOf(
+    "Как в сезоне", "Закат", "Туман", "Аврора", "Графит",
+    "Мороз", "Снежинки", "Северное сияние", "Лёд", "Зимняя ночь", "Ели", "Звёзды",
+)
+
+private class SeasonalParticle(
+    val x: Float,
+    val phase: Float,
+    val speed: Float,
+    val drift: Float,
+    val size: Float,
+    val alpha: Float,
+    val tint: Int,
+)
+
+/** Снег зимой, листья на Хэллоуин, снег с огоньками на Новый год. */
+@Composable
+fun SeasonalOverlay(season: SeasonStyle, enabled: Boolean) {
+    if (!enabled || season == SeasonStyle.None) return
+    val transition = rememberInfiniteTransition(label = "season")
+    val t by transition.animateFloat(
+        0f, 1f,
+        infiniteRepeatable(tween(18_000, easing = LinearEasing), RepeatMode.Restart),
+        label = "season_t",
+    )
+    val particles = remember(season) {
+        val r = Random(season.key.hashCode())
+        List(if (season == SeasonStyle.Halloween) 46 else 72) {
+            SeasonalParticle(
+                x = r.nextFloat(),
+                phase = r.nextFloat(),
+                speed = 0.35f + r.nextFloat() * 0.8f,
+                drift = 0.01f + r.nextFloat() * 0.035f,
+                size = 0.6f + r.nextFloat() * 1.6f,
+                alpha = 0.35f + r.nextFloat() * 0.5f,
+                tint = r.nextInt(4),
+            )
+        }
+    }
+    val festive = listOf(Color(0xFFFFD54F), Color(0xFFFF6B6B), Color(0xFF69F0AE), Color.White)
+    Canvas(Modifier.fillMaxSize()) {
+        val w = size.width
+        val h = size.height
+        for (p in particles) {
+            val y = (((p.phase + t * p.speed) % 1.16f) - 0.08f) * h
+            val x = ((p.x * w + sin(t * 6.283f * p.speed + p.phase * 6.283f) * p.drift * w) % w + w) % w
+            val r = p.size * w * 0.0045f
+            when (season) {
+                SeasonStyle.Halloween -> rotate(t * 360f * p.speed + p.phase * 360f, Offset(x, y)) {
+                    drawOval(
+                        color = if (p.tint == 0) Color(0xFFFF8A1F).copy(alpha = p.alpha) else Color(0xFF2A1020).copy(alpha = p.alpha),
+                        topLeft = Offset(x - r, y - r * 0.5f),
+                        size = Size(r * 2.4f, r),
+                    )
+                }
+                SeasonStyle.NewYear -> drawCircle(
+                    color = festive[p.tint % festive.size].copy(alpha = p.alpha),
+                    radius = r,
+                    center = Offset(x, y),
+                )
+                SeasonStyle.Winter -> drawCircle(Color.White.copy(alpha = p.alpha), r, Offset(x, y))
+                SeasonStyle.None -> Unit
+            }
+        }
+    }
+}

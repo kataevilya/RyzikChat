@@ -2,7 +2,7 @@
 import { store, api, errorText, previewText, callText, QUICK_REACTIONS } from './store.js';
 import {
   h, icon, iconBtn, clear, patchChildren, chatAvatar, avatar, nameLine, formatTime, formatDay, sameDay, formatLastSeen, formatSize,
-  formatDuration, members, richText, isEmojiOnly, menu, dialog, confirm, toast, sheet, pickFile, copyText, settings, emptyState, spinner,
+  formatDuration, members, richText, isEmojiOnly, menu, dialog, confirm, toast, sheet, pickFile, copyText, settings, emptyState, spinner, field,
 } from './ui.js';
 import { go, back } from './nav.js';
 import { dangerItems, parseInvite } from './chats.js';
@@ -653,6 +653,98 @@ export function chatScreen(chatId, focusMessageId) {
     focusInput();
   }
 
+  // ---------- AI-помощник ----------
+
+  function aiEndpoint(raw) {
+    const base = String(raw || '').trim().replace(/\/$/, '');
+    if (!base) return '';
+    if (base.endsWith('/chat/completions')) return base;
+    if (base.endsWith('/v1')) return base + '/chat/completions';
+    return base + '/v1/chat/completions';
+  }
+
+  function aiConfigure(after) {
+    const url = field('Ссылка на API', { value: settings.aiUrl || '', placeholder: 'https://api.example.com/v1' });
+    const key = field('API-ключ', { value: settings.aiKey || '', type: 'password' });
+    const model = field('Модель', { value: settings.aiModel || 'gpt-4o-mini', placeholder: 'gpt-4o-mini' });
+    dialog({
+      title: 'Подключить AI',
+      icon: 'auto_awesome',
+      wide: true,
+      body: h('div', null, url.el, key.el, model.el,
+        h('p.hint', null, 'Ключ хранится только в этом браузере и отправляется напрямую на указанный адрес.')),
+      actions: [
+        { label: 'Отмена' },
+        { label: 'Сохранить', primary: true, run: () => {
+          saveAi(url.input.value, key.input.value, model.input.value);
+          after?.();
+        } },
+      ],
+    });
+  }
+
+  function saveAi(url, key, model) {
+    // settings сохраняется через saveSettings из ui.js; здесь достаточно localStorage-совместимого patch.
+    Object.assign(settings, { aiUrl: String(url || '').trim(), aiKey: String(key || '').trim(), aiModel: String(model || '').trim() || 'gpt-4o-mini' });
+    try { localStorage.setItem('rc.settings', JSON.stringify(settings)); } catch { /* */ }
+  }
+
+  const AI_ACTIONS = {
+    style: ['✨', 'Стиль текста', 'Приведи текст в порядок: исправь орфографию, пунктуацию и грамматику, сделай формулировки естественными. Сохрани смысл и язык. Верни только готовый текст.'],
+    emoji: ['😊', 'Добавить эмодзи', 'Расставь в текст подходящие по смыслу эмодзи. Не меняй слова и смысл. Верни только готовый текст.'],
+    shorten: ['✂️', 'Сократить текст', 'Сократи текст примерно на треть, сохранив главный смысл и тон. Убери повторы. Верни только готовый текст.'],
+  };
+
+  function aiMenu() {
+    if (!settings.aiUrl || !settings.aiKey) { aiConfigure(aiMenu); return; }
+    let sh;
+    const body = h('div', null, ...Object.entries(AI_ACTIONS).map(([key, [emoji, title]]) =>
+      h('button.list-item', { style: { width: '100%' }, onclick: () => { sh.close(); aiRun(key); } },
+        h('span', { style: { fontSize: '22px', width: '36px' } }, emoji), h('span.li-text', null, h('span.li-title', null, title)))));
+    body.append(h('button.text-btn', { style: { marginTop: '6px' }, onclick: () => { sh.close(); aiConfigure(aiMenu); } }, 'Настроить AI'));
+    sh = sheet({ title: 'AI-помощник', body });
+  }
+
+  async function aiRun(kind) {
+    const [emoji, title, prompt] = AI_ACTIONS[kind];
+    const text = input.value;
+    const wait = dialog({ title: emoji + ' ' + title, icon: 'auto_awesome', body: h('div', null, spinner(), h('p.hint', null, 'AI думает…')), actions: [] });
+    try {
+      const res = await fetch(aiEndpoint(settings.aiUrl), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + settings.aiKey },
+        body: JSON.stringify({
+          model: settings.aiModel || 'gpt-4o-mini',
+          temperature: 0.3,
+          messages: [
+            { role: 'system', content: 'Ты помощник в мессенджере RyzikChat. Отвечай на языке пользователя. ' + prompt },
+            { role: 'user', content: text },
+          ],
+        }),
+      });
+      const raw = await res.text();
+      let data = null;
+      try { data = JSON.parse(raw); } catch { /* */ }
+      if (!res.ok) throw new Error(data?.error?.message || (res.status === 401 ? 'AI-сервис отклонил ключ' : 'Ошибка AI-сервиса (' + res.status + ')'));
+      const out = data?.choices?.[0]?.message?.content?.trim();
+      if (!out) throw new Error('AI вернул пустой ответ');
+      wait.close();
+      dialog({
+        title: 'Готовый текст',
+        icon: 'auto_awesome',
+        wide: true,
+        body: h('div', null, h('p', { style: { whiteSpace: 'pre-wrap', lineHeight: '1.5' } }, out)),
+        actions: [
+          { label: 'Вставить ниже', run: () => { input.value = input.value.trimEnd() + '\n\n' + out; autosize(); updateSendIcon(); focusInput(); } },
+          { label: 'Заменить', primary: true, run: () => { input.value = out; autosize(); updateSendIcon(); focusInput(); } },
+        ],
+      });
+    } catch (e) {
+      wait.close();
+      toast(e?.message || 'Не удалось получить ответ AI');
+    }
+  }
+
   function sendFiles(files, asType = null) {
     for (const f of files) store.sendFile(chatId, f, '', asType, replyTo?.id ?? null);
     replyTo = null;
@@ -706,6 +798,10 @@ export function chatScreen(chatId, focusMessageId) {
       col.append(h('div.compose-ctx', null, icon(editing ? 'edit' : 'reply', 'lead'),
         h('div.cc-text', null, h('div.cc-t', null, editing ? 'Редактирование' : senderName(ctx.senderId)), h('div.cc-s', null, ctx.content ? previewText(ctx.type, ctx.content) : '')),
         iconBtn('close', 'Отмена', () => { if (editing) input.value = ''; replyTo = editing = null; renderComposer(); })));
+    }
+    const aiLines = (input.value.match(/\n/g) || []).length + 1;
+    if (aiLines >= 3 || input.value.length >= 180) {
+      col.append(h('div.ai-row', null, h('button.ai-chip', { onclick: () => aiMenu() }, icon('auto_awesome'), 'AI-помощник')));
     }
     if (recorder) { col.append(recorder.bar); return; }
     col.append(h('div.composer', null,

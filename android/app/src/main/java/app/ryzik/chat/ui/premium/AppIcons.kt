@@ -14,6 +14,7 @@ object AppIcons {
 
     val all = listOf(
         AppIcon("default", "Классическая", listOf(Color.White, Color.White)),
+        AppIcon("winter", "Зима", listOf(Color(0xFF0B1A2E), Color(0xFF1B3550), Color(0xFF2E5677))),
         AppIcon("night", "Ночь", listOf(Color(0xFF1B1F3B), Color(0xFF2D2A5A), Color(0xFF0E0E1A))),
         AppIcon("sunset", "Закат", listOf(Color(0xFFFF8A3D), Color(0xFFFF5E62), Color(0xFFC2185B))),
         AppIcon("mint", "Мята", listOf(Color(0xFF1DE9B6), Color(0xFF26A69A), Color(0xFF00796B))),
@@ -39,8 +40,37 @@ object AppIcons {
         }
     }
 
-    /** Премиум закончился — возвращаем обычную иконку. */
+    /** Иконки, доступные только с Премиумом. Зимняя — основная и бесплатная. */
+    private val premiumKeys = setOf("night", "sunset", "mint", "ocean", "gold")
+
+    /** Премиум закончился — возвращаем зимнюю иконку. */
     fun enforce(context: Context, isPremium: Boolean) {
-        if (!isPremium && current(context) != "default") runCatching { apply(context, "default") }
+        if (!isPremium && current(context) in premiumKeys) runCatching { apply(context, "winter") }
+    }
+
+    /**
+     * После установки обновления зимняя иконка включается в манифесте. Если у пользователя
+     * уже была выбрана другая (например, премиумная), на экране оказались бы две иконки.
+     * Оставляем выбранную пользователем и выключаем остальные.
+     */
+    fun syncAfterUpdate(context: Context) {
+        val pm = context.packageManager
+        val enabled = all.filter { icon ->
+            val state = pm.getComponentEnabledSetting(alias(context, icon.key))
+            if (icon.key == "default") state != PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+            else state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+        }
+        if (enabled.size <= 1) return
+        val keep = enabled.firstOrNull { it.key !in setOf("winter", "default") }
+            ?: enabled.firstOrNull { it.key == "winter" }
+            ?: enabled.first()
+        for (icon in all) {
+            val on = icon.key == keep.key
+            pm.setComponentEnabledSetting(
+                alias(context, icon.key),
+                if (on) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP,
+            )
+        }
     }
 }

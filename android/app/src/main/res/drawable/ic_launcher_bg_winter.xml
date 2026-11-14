@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Зимний фон иконки: морозный градиент, снежинки и снежный наст. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="0" android:endX="108" android:endY="108">
+                <item android:offset="0" android:color="#FF0B1A2E" />
+                <item android:offset="0.55" android:color="#FF1B3550" />
+                <item android:offset="1" android:color="#FF2E5677" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Лунное свечение -->
+    <path android:fillColor="#18FFFFFF" android:pathData="M88,16m-34,0a34,34 0,1 1,68 0a34,34 0,1 1,-68 0" />
+    <path android:fillColor="#22FFFFFF" android:pathData="M88,16m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0" />
+    <!-- Снежинки -->
+    <path android:fillColor="#E6FFFFFF" android:pathData="M20,18m-2.4,0a2.4,2.4 0,1 1,4.8 0a2.4,2.4 0,1 1,-4.8 0" />
+    <path android:fillColor="#CCFFFFFF" android:pathData="M46,10m-1.6,0a1.6,1.6 0,1 1,3.2 0a1.6,1.6 0,1 1,-3.2 0" />
+    <path android:fillColor="#B3FFFFFF" android:pathData="M70,30m-1.8,0a1.8,1.8 0,1 1,3.6 0a1.8,1.8 0,1 1,-3.6 0" />
+    <path android:fillColor="#E6FFFFFF" android:pathData="M14,52m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path android:fillColor="#CCFFFFFF" android:pathData="M92,54m-2.2,0a2.2,2.2 0,1 1,4.4 0a2.2,2.2 0,1 1,-4.4 0" />
+    <path android:fillColor="#B3FFFFFF" android:pathData="M32,88m-1.6,0a1.6,1.6 0,1 1,3.2 0a1.6,1.6 0,1 1,-3.2 0" />
+    <path android:fillColor="#CCFFFFFF" android:pathData="M80,92m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <!-- Колючие снежинки -->
+    <path android:strokeColor="#99FFFFFF" android:strokeWidth="1.1" android:strokeLineCap="round"
+        android:pathData="M58,16 L58,25 M53.5,18.5 L62.5,22.5 M62.5,18.5 L53.5,22.5" />
+    <path android:strokeColor="#80FFFFFF" android:strokeWidth="1.1" android:strokeLineCap="round"
+        android:pathData="M26,70 L26,78 M22,72 L30,76 M30,72 L22,76" />
+    <path android:strokeColor="#80FFFFFF" android:strokeWidth="1" android:strokeLineCap="round"
+        android:pathData="M92,74 L92,81 M88.5,75.5 L95.5,79.5 M95.5,75.5 L88.5,79.5" />
+    <!-- Снежный наст снизу -->
+    <path android:fillColor="#26FFFFFF" android:pathData="M0,88 C18,83 34,92 52,87 C70,82 86,91 108,86 L108,108 L0,108 Z" />
+    <path android:fillColor="#1AFFFFFF" android:pathData="M0,96 C22,91 40,99 60,95 C80,91 94,97 108,94 L108,108 L0,108 Z" />
+</vector>

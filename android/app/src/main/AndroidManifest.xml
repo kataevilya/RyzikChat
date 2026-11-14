@@ -24,8 +24,8 @@
     <application
         android:name=".RyzikApp"
         android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher_winter"
+        android:roundIcon="@mipmap/ic_launcher_winter"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.RyzikChat"
@@ -53,7 +53,7 @@
             android:targetActivity=".MainActivity"
             android:icon="@mipmap/ic_launcher"
             android:roundIcon="@mipmap/ic_launcher"
-            android:enabled="true"
+            android:enabled="false"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -114,6 +114,19 @@
             android:icon="@mipmap/ic_launcher_gold"
             android:roundIcon="@mipmap/ic_launcher_gold"
             android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <!-- Зимняя иконка: основная для зимнего обновления. -->
+        <activity-alias
+            android:name=".IconWinter"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_launcher_winter"
+            android:roundIcon="@mipmap/ic_launcher_winter"
+            android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

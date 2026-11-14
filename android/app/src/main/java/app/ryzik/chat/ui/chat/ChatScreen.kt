@@ -175,6 +175,8 @@ import app.ryzik.chat.ui.components.formatDay
 import app.ryzik.chat.ui.components.formatLastSeen
 import app.ryzik.chat.ui.components.isSameDay
 import app.ryzik.chat.ui.theme.wallpaperColors
+import app.ryzik.chat.ui.theme.WallpaperPicker
+import app.ryzik.chat.ui.ai.AiAssistantSheet
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
@@ -213,6 +215,9 @@ fun ChatScreen(
 
     var input by remember { mutableStateOf("") }
     var replyTo by remember { mutableStateOf<UiMessage?>(null) }
+    var showAi by remember { mutableStateOf(false) }
+    var showWallpaperPicker by remember { mutableStateOf(false) }
+    val chatWallpapers by app.prefs.chatWallpapers.collectAsState(initial = emptyMap())
     var editing by remember { mutableStateOf<UiMessage?>(null) }
     var menuFor by remember { mutableStateOf<UiMessage?>(null) }
     var forwarding by remember { mutableStateOf<UiMessage?>(null) }
@@ -346,7 +351,9 @@ fun ChatScreen(
         input = ""
     }
 
-    val wallpaper = wallpaperColors(settings.wallpaper)
+    // Обои этого чата (как в Telegram) или общие из настроек.
+    val wallpaperIndex = chatWallpapers[chatId] ?: settings.wallpaper
+    val wallpaper = wallpaperColors(wallpaperIndex)
     val density = LocalDensity.current
     var topH by remember { mutableIntStateOf(0) }
     var bottomH by remember { mutableIntStateOf(0) }
@@ -357,6 +364,42 @@ fun ChatScreen(
 
     if (showStickers) {
         StickerSheet(chatId, replyTo?.id, onSent = { showStickers = false; replyTo = null }, onDismiss = { showStickers = false })
+    }
+
+    if (showWallpaperPicker) {
+        WallpaperPicker(
+            current = wallpaperIndex,
+            onPick = { i ->
+                scope.launch {
+                    app.prefs.setChatWallpaper(chatId, i)
+                    if (chat?.wallpaperFileId != null) runCatching { repo.setWallpaper(chatId, null) }
+                }
+            },
+            onPickAll = { i ->
+                scope.launch {
+                    app.prefs.update { it.copy(wallpaper = i) }
+                    app.prefs.clearChatWallpapers()
+                    if (chat?.wallpaperFileId != null) runCatching { repo.setWallpaper(chatId, null) }
+                }
+                showWallpaperPicker = false
+            },
+            onUpload = {
+                showWallpaperPicker = false
+                wallpaperPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            },
+            onRemove = {
+                scope.launch {
+                    app.prefs.setChatWallpaper(chatId, null)
+                    if (chat?.wallpaperFileId != null) runCatching { repo.setWallpaper(chatId, null) }
+                }
+                showWallpaperPicker = false
+            },
+            onDismiss = { showWallpaperPicker = false },
+        )
+    }
+
+    if (showAi) {
+        AiAssistantSheet(text = input, onApply = { input = it }, onDismiss = { showAi = false })
     }
 
     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(wallpaper))) {
@@ -562,13 +605,19 @@ fun ChatScreen(
                                     leadingIcon = { Icon(Icons.Rounded.Wallpaper, null) },
                                     onClick = {
                                         showMenu = false
-                                        wallpaperPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                        showWallpaperPicker = true
                                     },
                                 )
                                 if (chat?.wallpaperFileId != null) DropdownMenuItem(
                                     text = { Text("Убрать обои") },
                                     leadingIcon = { Icon(Icons.Rounded.HideImage, null) },
-                                    onClick = { showMenu = false; scope.launch { runCatching { repo.setWallpaper(chatId, null) }.onFailure { error = it.userMessage() } } },
+                                    onClick = {
+                                        showMenu = false
+                                        scope.launch {
+                                            app.prefs.setChatWallpaper(chatId, null)
+                                            runCatching { repo.setWallpaper(chatId, null) }.onFailure { error = it.userMessage() }
+                                        }
+                                    },
                                 )
                             }
                             if (chat != null) {
@@ -790,6 +839,23 @@ fun ChatScreen(
                                 Icon(Icons.Rounded.Close, "Отмена")
                             }
                         }
+                        }
+                    }
+                    // AI появляется, когда текста уже три строки (или он совсем длинный).
+                    val aiEligible = input.lines().size >= 3 || input.length >= 180
+                    AnimatedVisibility(aiEligible && !recordingVoice, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                        Row(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+                            Surface(
+                                shape = RoundedCornerShape(22.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.clickable { showAi = true },
+                            ) {
+                                Row(Modifier.padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Text("✨", fontSize = 17.sp)
+                                    Spacer(Modifier.width(7.dp))
+                                    Text("AI-помощник", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                }
+                            }
                         }
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {

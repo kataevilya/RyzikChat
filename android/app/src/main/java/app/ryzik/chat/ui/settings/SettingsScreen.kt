@@ -131,6 +131,7 @@ enum class SettingsSection(val title: String, val subtitle: String, val icon: Im
     Privacy("Конфиденциальность", "Шифрование, сеансы, пароль", Icons.Rounded.Security, SettingsColors.Green),
     Data("Данные и память", "Автозагрузка, кэш", Icons.Rounded.Storage, SettingsColors.Teal),
     Server("Сервер", "Основной сервер RyzikChat", Icons.Rounded.Dns, SettingsColors.Orange),
+    Ai("AI-помощник", "Ключ, модель, стиль и сокращение текста", Icons.Rounded.AutoAwesome, SettingsColors.Pink),
     Api("Открытый API", "Для своих приложений и других устройств", Icons.Rounded.Code, SettingsColors.Slate),
     Updates("Обновления", "Новые версии приходят прямо в приложение", Icons.Rounded.SystemUpdate, SettingsColors.Cyan),
     About("О приложении", "Версия, правила", Icons.Rounded.Info, SettingsColors.Gray),
@@ -185,6 +186,7 @@ fun SettingsScreen(
     )
     val rows = buildList {
         if (me.isAdmin) add(SettingsEntry("admin", Icons.Rounded.AdminPanelSettings, SettingsColors.Indigo, "Админ-панель", "Модерация, FLUX и NFT", onOpenAdmin))
+        add(section(SettingsSection.Ai))
         add(section(SettingsSection.Data))
         add(section(SettingsSection.Updates))
         add(section(SettingsSection.Api))
@@ -447,6 +449,7 @@ fun SettingsSectionScreen(section: SettingsSection, onBack: () -> Unit, onOpenTe
                 SettingsSection.Privacy -> PrivacySettings(settings, ::update)
                 SettingsSection.Data -> DataSettings(settings, ::update)
                 SettingsSection.Server -> ServerSettings()
+                SettingsSection.Ai -> AiSettings(settings, ::update)
                 SettingsSection.Api -> ApiSettings()
                 SettingsSection.Updates -> UpdatesSettings()
                 SettingsSection.About -> AboutSettings(onOpenTerms)
@@ -526,7 +529,20 @@ private fun AppearanceSettings(s: AppSettings, update: ((AppSettings) -> AppSett
     }
     SwitchRow("Чёрная тема (AMOLED)", "Глубокий чёрный в тёмной теме", s.amoled) { v -> update { it.copy(amoled = v) } }
 
-    Header("Обои чата")
+    val season by RyzikApp.instance.repo.season.collectAsState()
+    SwitchRow(
+        "Сезонное оформление",
+        "Сейчас: ${season.style.title}. Снег и сезонные обои; выключается только у вас",
+        s.seasonalTheme,
+    ) { v -> update { it.copy(seasonalTheme = v) } }
+    Text(
+        "Сезон для всех выбирает администратор в админ-панели. Здесь вы можете отключить его только для себя — у других он останется.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 28.dp, vertical = 4.dp),
+    )
+
+    Header("Обои чата по умолчанию")
     LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         itemsIndexed(WallpaperNames) { i, name ->
             val selected = s.wallpaper == i
@@ -580,6 +596,72 @@ private fun AppearanceSettings(s: AppSettings, update: ((AppSettings) -> AppSett
     }
     SwitchRow("Компактный список чатов", null, s.compactList) { v -> update { it.copy(compactList = v) } }
     SwitchRow("Анимации", "Пружинки, появление сообщений и прочая красота", s.animations) { v -> update { it.copy(animations = v) } }
+}
+
+@Composable
+private fun AiSettings(s: AppSettings, update: ((AppSettings) -> AppSettings) -> Unit) {
+    var url by remember(s.aiUrl) { mutableStateOf(s.aiUrl) }
+    var key by remember(s.aiKey) { mutableStateOf(s.aiKey) }
+    var model by remember(s.aiModel) { mutableStateOf(s.aiModel) }
+    Header("Подключение")
+    Text(
+        "Любой OpenAI-совместимый API. Кнопка AI появляется в поле ввода, когда текста становится три строки.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 28.dp, vertical = 4.dp),
+    )
+    OutlinedTextField(
+        value = url,
+        onValueChange = { url = it },
+        label = { Text("Ссылка на API") },
+        placeholder = { Text("https://api.example.com/v1") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+    )
+    OutlinedTextField(
+        value = key,
+        onValueChange = { key = it },
+        label = { Text("API-ключ") },
+        placeholder = { Text("sk-…") },
+        singleLine = true,
+        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+    )
+    OutlinedTextField(
+        value = model,
+        onValueChange = { model = it },
+        label = { Text("Модель") },
+        placeholder = { Text("gpt-4o-mini") },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+    )
+    val endpoint = app.ryzik.chat.data.AiClient.endpoint(url)
+    if (endpoint.isNotBlank()) Text(
+        "Запросы пойдут на $endpoint",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 28.dp),
+    )
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.End) {
+        if (s.aiKey.isNotBlank()) TextButton(onClick = { key = ""; update { it.copy(aiKey = "") } }) { Text("Удалить ключ") }
+        Spacer(Modifier.width(8.dp))
+        androidx.compose.material3.Button(
+            enabled = url.isNotBlank() && key.isNotBlank(),
+            onClick = { update { it.copy(aiUrl = url.trim(), aiKey = key.trim(), aiModel = model.trim().ifBlank { "gpt-4o-mini" }) } },
+        ) { Text("Сохранить") }
+    }
+    Header("Что умеет")
+    Text("✨ Стиль текста — орфография, пунктуация и аккуратные формулировки.\n😊 Добавить эмодзи — подходящие смайлики по смыслу.\n✂️ Сократить текст — короче, без потери смысла.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 28.dp, vertical = 4.dp),
+    )
+    Text(
+        "Ключ хранится только на этом устройстве и не отправляется на сервер RyzikChat. Текст уходит напрямую на указанный вами AI-сервис только после нажатия кнопки.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 28.dp, vertical = 12.dp),
+    )
 }
 
 @Composable

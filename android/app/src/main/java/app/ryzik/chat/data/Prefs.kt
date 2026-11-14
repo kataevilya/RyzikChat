@@ -1,6 +1,8 @@
 package app.ryzik.chat.data
 
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import androidx.datastore.preferences.core.MutablePreferences
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
@@ -28,6 +30,12 @@ data class AppSettings(
     val textSize: Float = 16f,
     val bubbleRadius: Float = 18f,
     val wallpaper: Int = 0,
+    /** Сезонное оформление от администратора: снег, палитра и зимние обои. Можно отключить только у себя. */
+    val seasonalTheme: Boolean = true,
+    /** AI-помощник: любой OpenAI-совместимый API. Ключ хранится только на этом устройстве. */
+    val aiUrl: String = "",
+    val aiKey: String = "",
+    val aiModel: String = "gpt-4o-mini",
     val sendByEnter: Boolean = false,
     val swipeToReply: Boolean = true,
     val animations: Boolean = true,
@@ -85,6 +93,11 @@ class Prefs(private val context: Context) {
         val textSize = floatPreferencesKey("text_size")
         val radius = floatPreferencesKey("bubble_radius")
         val wallpaper = intPreferencesKey("wallpaper")
+        val chatWallpapers = stringPreferencesKey("chat_wallpapers")
+        val seasonalTheme = booleanPreferencesKey("seasonal_theme")
+        val aiUrl = stringPreferencesKey("ai_url")
+        val aiKey = stringPreferencesKey("ai_key")
+        val aiModel = stringPreferencesKey("ai_model")
         val sendByEnter = booleanPreferencesKey("send_by_enter")
         val swipeReply = booleanPreferencesKey("swipe_reply")
         val animations = booleanPreferencesKey("animations")
@@ -126,6 +139,10 @@ class Prefs(private val context: Context) {
             textSize = p[K.textSize] ?: d.textSize,
             bubbleRadius = p[K.radius] ?: d.bubbleRadius,
             wallpaper = p[K.wallpaper] ?: d.wallpaper,
+            seasonalTheme = p[K.seasonalTheme] ?: d.seasonalTheme,
+            aiUrl = p[K.aiUrl] ?: d.aiUrl,
+            aiKey = p[K.aiKey] ?: d.aiKey,
+            aiModel = p[K.aiModel] ?: d.aiModel,
             sendByEnter = p[K.sendByEnter] ?: d.sendByEnter,
             swipeToReply = p[K.swipeReply] ?: d.swipeToReply,
             animations = p[K.animations] ?: d.animations,
@@ -159,6 +176,10 @@ class Prefs(private val context: Context) {
             p[K.textSize] = s.textSize
             p[K.radius] = s.bubbleRadius
             p[K.wallpaper] = s.wallpaper
+            p[K.seasonalTheme] = s.seasonalTheme
+            p[K.aiUrl] = s.aiUrl
+            p[K.aiKey] = s.aiKey
+            p[K.aiModel] = s.aiModel
             p[K.sendByEnter] = s.sendByEnter
             p[K.swipeReply] = s.swipeToReply
             p[K.animations] = s.animations
@@ -179,6 +200,28 @@ class Prefs(private val context: Context) {
             p[K.inAppNotif] = s.inAppNotifications
             p[K.allAccountsNotif] = s.allAccountsNotifications
         }
+    }
+
+    /** Обои, выбранные отдельно для каждого чата (как в Telegram). */
+    val chatWallpapers: Flow<Map<String, Int>> = context.store.data.map { readWallpapers(it) }
+
+    private fun readWallpapers(p: Preferences): Map<String, Int> {
+        val raw = p[K.chatWallpapers] ?: return emptyMap()
+        return runCatching {
+            AppJson.decodeFromString(MapSerializer(String.serializer(), Int.serializer()), raw)
+        }.getOrDefault(emptyMap())
+    }
+
+    suspend fun setChatWallpaper(chatId: String, index: Int?) {
+        context.store.edit { p ->
+            val map = readWallpapers(p).toMutableMap()
+            if (index == null) map.remove(chatId) else map[chatId] = index
+            p[K.chatWallpapers] = AppJson.encodeToString(MapSerializer(String.serializer(), Int.serializer()), map)
+        }
+    }
+
+    suspend fun clearChatWallpapers() {
+        context.store.edit { it.remove(K.chatWallpapers) }
     }
 
     val session: Flow<StoredSession> = context.store.data.map { p ->

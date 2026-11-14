@@ -75,6 +75,12 @@ export class Hub {
     }
   }
 
+  /** Событие всем подключённым клиентам: сезонное оформление и другие общие настройки. */
+  broadcastAll(event) {
+    const data = JSON.stringify(event);
+    for (const set of this.sockets.values()) for (const ws of set) safeSend(ws, data);
+  }
+
   /** Закрывает все подключения пользователя (бан): клиент увидит код 4003. */
   disconnectUser(userId, reason = 'banned') {
     for (const ws of this.sockets.get(userId) ?? []) { try { ws.close(4003, reason); } catch { ws.terminate(); } }

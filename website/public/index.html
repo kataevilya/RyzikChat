@@ -8,8 +8,8 @@
 <meta property="og:title" content="RyzikChat">
 <meta property="og:description" content="Мессенджер со сквозным шифрованием. Скачайте последнюю версию для Android.">
 <meta name="theme-color" content="#000000">
-<link rel="icon" href="/favicon.ico" sizes="32x32">
-<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="icon" href="/winter-icon.svg" type="image/svg+xml">
+<link rel="icon" href="/winter-icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -62,10 +62,21 @@ h1 .out{color:#4a4a4a}
 .final .btn.primary{background:#000;color:#fff;border-color:#000}
 .final .btn.primary:hover{box-shadow:0 18px 50px -12px rgba(0,0,0,.5)}
 @media (max-width:900px){.hero{grid-template-columns:1fr}.phone{margin-top:30px}.features,.live,.steps{grid-template-columns:1fr}}
+/* Зимнее оформление: снег и морозное свечение. */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:
+  radial-gradient(60% 50% at 82% 0%,rgba(90,169,230,.20),transparent 70%),
+  radial-gradient(45% 40% at 8% 100%,rgba(150,210,255,.10),transparent 70%)}
+#snow{position:fixed;inset:0;z-index:3;pointer-events:none;overflow:hidden}
+#snow i{position:absolute;top:-6vh;display:block;border-radius:50%;background:#fff;opacity:.75;filter:blur(.2px);animation:snowfall linear infinite}
+@keyframes snowfall{to{transform:translate3d(var(--sway,20px),112vh,0) rotate(360deg)}}
+.winter-badge{display:inline-flex;align-items:center;gap:8px;margin-bottom:16px;padding:8px 15px;border-radius:999px;
+  border:1px solid rgba(150,210,255,.45);background:rgba(90,169,230,.12);color:#cfe9ff;font-size:13px;font-weight:600}
+.hero h1 .out{color:#7f9bb5}
 </style>
 </head>
 <body>
 <div class="grid-bg"></div>
+<div id="snow" aria-hidden="true"></div>
 <div class="wrap">
   <nav>
     <a class="logo" href="/"><img src="/logo.svg" alt="" width="34" height="34">RyzikChat</a>
@@ -74,9 +85,10 @@ h1 .out{color:#4a4a4a}
 
   <section class="hero">
     <div>
+      <div class="winter-badge reveal">❄️ Зимнее обновление</div>
       <span class="tag reveal"><span class="dot" id="srvDot"></span><span id="srvTag">Проверяем сервер…</span></span>
       <h1 class="reveal" style="animation-delay:.08s">Общайся.<br><span class="out">Без чужих</span><br>глаз.</h1>
-      <p class="lead reveal" style="animation-delay:.16s">RyzikChat — мессенджер, где переписку видите только вы и собеседник. Чаты, группы, каналы, звонки и боты в одном лёгком приложении.</p>
+      <p class="lead reveal" style="animation-delay:.16s">RyzikChat — мессенджер, где переписку видите только вы и собеседник. Зимнее оформление, снег, обои чатов и AI-помощник уже внутри.</p>
       <div class="cta reveal" style="animation-delay:.24s">
         <a class="btn primary" id="dl" href="/download">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M6 11l6 6 6-6M4 21h16"/></svg>
@@ -153,6 +165,23 @@ function countUp(id, to) {
   const el = document.getElementById(id), t0 = performance.now(), d = 1400;
   (function step(t) { const p = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - p, 3); el.textContent = fmt(Math.round(to * e)); if (p < 1) requestAnimationFrame(step); })(t0);
 }
+// Снег на фоне
+(() => {
+  const box = document.getElementById('snow');
+  if (!box || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const count = innerWidth < 700 ? 36 : 72;
+  for (let i = 0; i < count; i++) {
+    const f = document.createElement('i');
+    const size = 1.5 + Math.random() * 4;
+    f.style.width = f.style.height = size + 'px';
+    f.style.left = Math.random() * 100 + '%';
+    f.style.opacity = (0.25 + Math.random() * 0.65).toFixed(2);
+    f.style.animationDuration = (9 + Math.random() * 14).toFixed(1) + 's';
+    f.style.animationDelay = (-Math.random() * 20).toFixed(1) + 's';
+    f.style.setProperty('--sway', (Math.random() * 90 - 45).toFixed(0) + 'px');
+    box.append(f);
+  }
+})();
 </script>
 </body>
 </html>

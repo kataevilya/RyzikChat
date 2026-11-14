@@ -53,6 +53,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import app.ryzik.chat.data.AuthState
+import app.ryzik.chat.data.SeasonStyle
 import app.ryzik.chat.notify.Notifier
 import app.ryzik.chat.ui.admin.AdminScreen
 import app.ryzik.chat.ui.auth.AuthScreen
@@ -72,6 +73,7 @@ import app.ryzik.chat.ui.settings.SettingsScreen
 import app.ryzik.chat.ui.settings.SettingsSection
 import app.ryzik.chat.ui.settings.SettingsSectionScreen
 import app.ryzik.chat.ui.theme.RyzikTheme
+import app.ryzik.chat.ui.theme.SeasonalOverlay
 import app.ryzik.chat.ui.welcome.WelcomeScreen
 
 class MainActivity : ComponentActivity() {
@@ -101,8 +103,10 @@ class MainActivity : ComponentActivity() {
             val settings by app.prefs.settings.collectAsState(initial = null)
             val auth by app.repo.auth.collectAsState()
             val adding by app.repo.addingAccount.collectAsState()
+            val season by app.repo.season.collectAsState()
             val s = settings ?: AppSettings()
-            RyzikTheme(s) {
+            val seasonStyle = if (s.seasonalTheme) season.style else SeasonStyle.None
+            RyzikTheme(s, seasonStyle) {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
                     if (settings == null || auth is AuthState.Loading) {
                         CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -115,6 +119,8 @@ class MainActivity : ComponentActivity() {
                             if (loggedIn) MainNav(pendingChat.value) { pendingChat.value = null }
                             else OnboardingNav(adding)
                         }
+                        // Зимний снег (или другой сезон) поверх интерфейса. Отключается в настройках и при выключенных анимациях.
+                        SeasonalOverlay(seasonStyle, s.animations)
                         val invite = pendingInvite.value
                         if (invite != null && auth is AuthState.LoggedIn) {
                             InviteDialog(
@@ -130,9 +136,10 @@ class MainActivity : ComponentActivity() {
                         }
                         // Конфетти при подарке.
                         if (auth is AuthState.LoggedIn) ConfettiOverlay()
-                        // Премиум закончился — иконка приложения снова обычная.
+                        // Премиум закончился — иконка приложения снова зимняя.
                         val premium = (auth as? AuthState.LoggedIn)?.me?.isPremium
                         LaunchedEffect(premium) { if (premium != null) AppIcons.enforce(this@MainActivity, premium) }
+                        LaunchedEffect(Unit) { AppIcons.syncAfterUpdate(this@MainActivity) }
                         // Звонок открывается поверх любого экрана.
                         val call by app.calls.state.collectAsState()
                         AnimatedVisibility(

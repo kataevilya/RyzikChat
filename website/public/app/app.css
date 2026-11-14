@@ -1,4 +1,9 @@
 /* RyzikChat Web — Material You, как в приложении. Цвета задаёт js/ui.js (applyTheme). */
+
+/* Зимний снег поверх интерфейса. */
+#snow-layer { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
+#snow-layer i { position: absolute; top: -6vh; display: block; border-radius: 50%; background: #fff; opacity: .7; animation: appSnow linear infinite; }
+@keyframes appSnow { to { transform: translate3d(var(--sway, 18px), 112vh, 0) rotate(360deg); } }
 :root {
   --primary: #9a4a12; --on-primary: #fff; --primary-container: #ffdcc6; --on-primary-container: #331200;
   --bg: #fffaf7; --surface: #fffaf7; --on-surface: #1C1B1F; --on-surface-variant: #52443c;
@@ -467,3 +472,7 @@ button:active:not(:disabled) { transform: scale(.98); }
 @media (max-width: 899px) { .msg-actions { display: none !important; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 
+
+.ai-row { display: flex; justify-content: flex-start; padding: 0 0 6px; }
+.ai-chip { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 999px; background: var(--primary-container); color: var(--on-primary-container); font-weight: 700; font-size: 13px; }
+.ai-chip .ms { font-size: 18px; }

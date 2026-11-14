@@ -79,6 +79,30 @@ export function profileTab() {
   const body = h('div.scroll');
   const el = h('div.screen', null, topBar({ title: 'Профиль', large: true, actions: [iconBtn('edit', 'Изменить', () => editProfile())] }), body);
 
+  function aiSettings() {
+    const url = field('Ссылка на API', { value: settings.aiUrl || '', placeholder: 'https://api.example.com/v1' });
+    const key = field('API-ключ', { value: settings.aiKey || '', type: 'password' });
+    const model = field('Модель', { value: settings.aiModel || 'gpt-4o-mini', placeholder: 'gpt-4o-mini' });
+    dialog({
+      title: 'AI-помощник',
+      icon: 'auto_awesome',
+      wide: true,
+      body: h('div', null, url.el, key.el, model.el,
+        h('p.hint', null, 'Любой OpenAI-совместимый API. Ключ хранится только в этом браузере. Кнопка AI появляется в чате, когда текста становится три строки.')),
+      actions: [
+        { label: 'Отмена' },
+        { label: 'Сохранить', primary: true, run: () => {
+          saveSettings({
+            aiUrl: String(url.input.value || '').trim(),
+            aiKey: String(key.input.value || '').trim(),
+            aiModel: String(model.input.value || '').trim() || 'gpt-4o-mini',
+          });
+          render();
+        } },
+      ],
+    });
+  }
+
   function render() {
     const me = store.me;
     if (!me) return;
@@ -366,6 +390,8 @@ export function settingsTab() {
 
     const themeTitle = { system: 'Как в системе', light: 'Светлая', dark: 'Тёмная' };
     body.append(section('Оформление',
+      listItem({ leading: 'ac_unit', title: 'Сезонное оформление', subtitle: 'Снег и зимние акценты — только у вас', trailing: switchEl(settings.seasonal !== false, (v) => { saveSettings({ seasonal: v }); const snow = document.getElementById('snow-layer'); if (snow) snow.style.display = v ? 'block' : 'none'; render(); }) }),
+      listItem({ leading: 'auto_awesome', title: 'AI-помощник', subtitle: settings.aiUrl ? 'Подключён' : 'Ссылка и ключ', onClick: aiSettings }),
       listItem({ leading: 'dark_mode', title: 'Тема', subtitle: themeTitle[settings.theme], onClick: (e) => menu(e, Object.entries(themeTitle).map(([k, v]) => ({ icon: settings.theme === k ? 'radio_button_checked' : 'radio_button_unchecked', label: v, run: () => { saveSettings({ theme: k }); render(); } }))) }),
       h('div', null, h('div.li-sub', { style: { padding: '12px 16px 0', fontWeight: 700 } }, 'Цвет приложения'), seedPicker(render)),
       listItem({ leading: 'format_size', title: 'Размер текста', subtitle: `${Math.round(settings.fontScale * 100)}%`, trailing: h('input.slider', { type: 'range', min: 0.85, max: 1.3, step: 0.05, value: settings.fontScale, style: { width: '140px' }, oninput: (e) => saveSettings({ fontScale: Number(e.target.value) }), onchange: () => render() }) }),

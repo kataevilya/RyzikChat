@@ -463,6 +463,9 @@ data class RealtimeEvent(
     /** story.new / story.deleted / story.reaction. */
     val story: Story? = null,
     val storyId: String? = null,
+    /** season.updated: сезон, который администратор включил для всех. */
+    val season: String? = null,
+    val updatedAt: Long? = null,
 )
 
 /** Подпись звонка для списка чатов и уведомлений. */
