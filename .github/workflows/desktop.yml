@@ -130,6 +130,9 @@ jobs:
     name: Релиз (Windows и Linux)
     needs: [windows, linux]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -140,11 +143,9 @@ jobs:
         run: ls -la release
       - name: Релиз (свежая сборка)
         if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ryzikchat-latest
-          name: RyzikChat (свежая сборка)
-          prerelease: true
-          make_latest: false
-          overwrite_files: true
-          files: release/*
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view ryzikchat-latest >/dev/null 2>&1 ||             gh release create ryzikchat-latest --prerelease --title "RyzikChat (свежая сборка)" --notes "Свежая сборка RyzikChat."
+          gh release upload ryzikchat-latest release/* --clobber

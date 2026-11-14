@@ -647,6 +647,9 @@ export function createApp({ db, dataDir, hub, adminUsernames = [], updateSource 
 
   app.get('/api/health', (_req, res) => res.json({ ok: true, name: 'RyzikChat', version: serverVersion(), apiVersion: 1 }));
 
+  // Главная страница: по ней хостинг (например, Hugging Face) видит, что сервер запущен.
+  app.get('/', (_req, res) => res.type('text/plain; charset=utf-8').send(`Сервер RyzikChat ${serverVersion()} работает. API: /api, документация: /api/docs`));
+
   // ---------- сезонное оформление ----------
 
   /** Текущий сезон. Читают все клиенты, в том числе сайт без входа. */
