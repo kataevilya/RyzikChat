@@ -134,6 +134,7 @@ jobs:
       contents: write
       actions: read
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           pattern: RyzikChat-*
@@ -145,7 +146,10 @@ jobs:
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          gh release view ryzikchat-latest >/dev/null 2>&1 ||             gh release create ryzikchat-latest --prerelease --title "RyzikChat (свежая сборка)" --notes "Свежая сборка RyzikChat."
-          gh release upload ryzikchat-latest release/* --clobber
+          if ! gh release view ryzikchat-latest --repo "$REPO" >/dev/null 2>&1; then
+            gh release create ryzikchat-latest --repo "$REPO" --prerelease --title "RyzikChat (свежая сборка)" --notes "Свежая сборка RyzikChat."
+          fi
+          gh release upload ryzikchat-latest release/* --repo "$REPO" --clobber
