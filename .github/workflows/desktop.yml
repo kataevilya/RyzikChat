@@ -17,6 +17,9 @@ jobs:
   windows:
     name: Windows (установщик)
     runs-on: windows-latest
+    concurrency:
+      group: ryzikchat-release
+      cancel-in-progress: false
     defaults:
       run:
         working-directory: desktop
@@ -75,6 +78,7 @@ jobs:
           name: RyzikChat (свежая сборка)
           prerelease: true
           make_latest: false
+          overwrite_files: true
           files: |
             desktop/RyzikChat-Setup.exe
             desktop/RyzikChat-Setup.msi
@@ -83,6 +87,9 @@ jobs:
   linux:
     name: Linux (AppImage и .deb)
     runs-on: ubuntu-22.04
+    concurrency:
+      group: ryzikchat-release
+      cancel-in-progress: false
     defaults:
       run:
         working-directory: desktop
@@ -143,6 +150,7 @@ jobs:
           name: RyzikChat (свежая сборка)
           prerelease: true
           make_latest: false
+          overwrite_files: true
           files: |
             desktop/RyzikChat-x86_64.AppImage
             desktop/RyzikChat-amd64.deb

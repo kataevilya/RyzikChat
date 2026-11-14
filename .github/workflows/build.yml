@@ -36,6 +36,9 @@ jobs:
     # Релиз с сервером выходит только после зелёных тестов сервера: серверы обновляются из него сами.
     needs: server
     runs-on: ubuntu-latest
+    concurrency:
+      group: ryzikchat-release
+      cancel-in-progress: false
     defaults:
       run:
         working-directory: android
@@ -136,6 +139,7 @@ jobs:
           name: RyzikChat (свежая сборка)
           prerelease: true
           make_latest: false
+          overwrite_files: true
           target_commitish: ${{ github.sha }}
           body: "APK RyzikChat из ветки ${{ github.ref_name }}, коммит ${{ github.sha }}."
           files: |
