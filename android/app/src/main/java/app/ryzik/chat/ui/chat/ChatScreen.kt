@@ -175,6 +175,7 @@ import app.ryzik.chat.ui.components.formatDay
 import app.ryzik.chat.ui.components.formatLastSeen
 import app.ryzik.chat.ui.components.isSameDay
 import app.ryzik.chat.ui.theme.wallpaperColors
+import app.ryzik.chat.ui.theme.WallpaperBackground
 import app.ryzik.chat.ui.theme.WallpaperPicker
 import app.ryzik.chat.ui.ai.AiAssistantSheet
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -402,7 +403,8 @@ fun ChatScreen(
         AiAssistantSheet(text = input, onApply = { input = it }, onDismiss = { showAi = false })
     }
 
-    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(wallpaper))) {
+    Box(Modifier.fillMaxSize()) {
+        WallpaperBackground(wallpaperIndex, Modifier.matchParentSize())
             // Обои из фото: одни на всех участников чата. Поверх — лёгкое затемнение, чтобы читался текст.
             chat?.wallpaperFileId?.let { wp ->
                 coil.compose.AsyncImage(

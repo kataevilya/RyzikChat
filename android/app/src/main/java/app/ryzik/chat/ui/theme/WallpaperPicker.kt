@@ -80,9 +80,8 @@ fun WallpaperPicker(
                                         color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                         shape = RoundedCornerShape(16.dp),
                                     )
-                                    .background(Brush.verticalGradient(wallpaperColors(i).let { if (it.size < 2) it + it else it }))
                                     .clickable { onPick(i) },
-                            )
+                            ) { WallpaperPreview(i, Modifier.fillMaxSize()) }
                             Spacer(Modifier.height(4.dp))
                             Text(name, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }

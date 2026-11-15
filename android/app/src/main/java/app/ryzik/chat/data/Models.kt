@@ -179,17 +179,6 @@ data class DeviceBan(
 data class DeviceBanResult(val user: User, val devices: Int = 0, val ips: Int = 0, val added: Int = 0)
 
 @Serializable
-data class PasswordResetResult(val username: String, val password: String? = null)
-
-@Serializable
-data class AdminUserKey(
-    val id: String,
-    val username: String,
-    val publicKey: String = "",
-    val encryptedPrivateKey: String,
-)
-
-@Serializable
 data class AdminDeleteResult(val ok: Boolean = true, val deletedMessages: Int = 0)
 
 @Serializable

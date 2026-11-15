@@ -119,6 +119,8 @@ import app.ryzik.chat.ui.components.formatListTime
 import app.ryzik.chat.ui.components.formatSize
 import app.ryzik.chat.ui.theme.SeedColors
 import app.ryzik.chat.ui.theme.WallpaperNames
+import app.ryzik.chat.ui.theme.WallpaperBackground
+import app.ryzik.chat.ui.theme.WallpaperPreview
 import app.ryzik.chat.ui.theme.wallpaperColors
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -552,10 +554,8 @@ private fun AppearanceSettings(s: AppSettings, update: ((AppSettings) -> AppSett
                         .size(width = 72.dp, height = 110.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .border(3.dp, border, RoundedCornerShape(16.dp))
-                        .background(Brush.verticalGradient(wallpaperColors(i).let { if (it.size < 2) it + it else it }))
-                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (i == 0) 0.2f else 0f))
                         .clickable { update { it.copy(wallpaper = i) } },
-                )
+                ) { WallpaperPreview(i, Modifier.matchParentSize()) }
                 Text(name, style = MaterialTheme.typography.labelSmall)
             }
         }
@@ -579,11 +579,10 @@ private fun AppearanceSettings(s: AppSettings, update: ((AppSettings) -> AppSett
             .fillMaxWidth()
             .padding(16.dp)
             .clip(RoundedCornerShape(24.dp))
-            .background(Brush.verticalGradient(wallpaperColors(s.wallpaper)))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp))
-            .padding(12.dp),
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp)),
     ) {
-        Column(Modifier.fillMaxWidth()) {
+        WallpaperBackground(s.wallpaper, Modifier.matchParentSize())
+        Column(Modifier.fillMaxWidth().padding(12.dp)) {
             Surface(shape = RoundedCornerShape(s.bubbleRadius.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
                 Text("Привет! Как тебе новая тема?", Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontSize = s.textSize.sp)
             }

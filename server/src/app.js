@@ -47,33 +47,6 @@ function verifyPassword(password, stored) {
   return crypto.timingSafeEqual(expected, actual);
 }
 
-/** Пароль для входа и ключ для приватного ключа — те же, что выводит клиент. */
-function derivePasswordKeys(username, password) {
-  const salt = Buffer.from(`ryzikchat:v1:${String(username).toLowerCase()}`);
-  const master = crypto.pbkdf2Sync(password, salt, 150_000, 64, 'sha256');
-  return { authKey: master.subarray(0, 32).toString('hex'), vaultKey: master.subarray(32, 64) };
-}
-
-/** Читаемый пароль без неоднозначных символов. */
-function randomPassword(length = 16) {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  let out = '';
-  for (let i = 0; i < length; i++) out += alphabet[crypto.randomInt(0, alphabet.length)];
-  return out;
-}
-
-/** Новая пара X25519 для аккаунта после сброса пароля. */
-function newIdentity(vaultKey) {
-  const { publicKey, privateKey } = crypto.generateKeyPairSync('x25519');
-  const pub = publicKey.export({ type: 'spki', format: 'der' }).subarray(-32);
-  const priv = privateKey.export({ type: 'pkcs8', format: 'der' }).subarray(-32);
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv('aes-256-gcm', vaultKey, iv);
-  cipher.setAAD(Buffer.from('ryzik/vault/v1'));
-  const sealed = Buffer.concat([iv, cipher.update(priv), cipher.final(), cipher.getAuthTag()]);
-  return { publicKey: pub.toString('base64'), encryptedPrivateKey: sealed.toString('base64') };
-}
-
 /**
  * Создаёт express-приложение. `hub` — объект с методами sendToUsers / isOnline
  * (реализован в realtime.js), через него REST-запросы рассылают события по WebSocket.
@@ -2308,52 +2281,6 @@ export function createApp({ db, dataDir, hub, adminUsernames = [], updateSource 
     hub.disconnectUser(row.id);
     logModeration(req.userId, 'ban', 'user', row.id, row.username, reason, until);
     res.json(adminUserView(getUserRow.get(row.id)));
-  });
-
-  // Админ получает только зашифрованный приватный ключ — расшифровать его можно
-  // старым паролем на клиенте, сервер этого не умеет.
-  app.get('/api/admin/users/:id/key', adminOnly, (req, res) => {
-    const row = moderatedTarget(req);
-    res.json({
-      id: row.id, username: row.username, publicKey: row.public_key,
-      encryptedPrivateKey: row.encrypted_private_key,
-    });
-  });
-
-  // Сброс пароля пользователя: 2FA и сеансы. Если клиент прислал новый authKey
-  // и заново запечатанный приватный ключ, история сохраняется; иначе выдаётся
-  // новый пароль и новая пара ключей (старые сообщения станут недоступны).
-  // Аккаунты администраторов защищены — moderatedTarget не даст их изменить.
-  app.post('/api/admin/users/:id/reset-password', adminOnly, (req, res) => {
-    const row = moderatedTarget(req);
-    const providedAuthKey = req.body?.password;
-    const providedSealed = req.body?.encryptedPrivateKey;
-    let password = null;
-    let publicKey = row.public_key;
-    let sealedKey;
-    let authHash;
-    if (typeof providedAuthKey === 'string' && providedAuthKey.length >= 16 && typeof providedSealed === 'string' && providedSealed.length > 20) {
-      // Клиент расшифровал старый ключ старым паролем и запечатал новым.
-      authHash = hashPassword(providedAuthKey);
-      sealedKey = providedSealed;
-    } else {
-      password = randomPassword(16);
-      const keys = derivePasswordKeys(row.username, password);
-      const identity = newIdentity(keys.vaultKey);
-      authHash = hashPassword(keys.authKey);
-      publicKey = identity.publicKey;
-      sealedKey = identity.encryptedPrivateKey;
-    }
-    tx(db, () => {
-      db.prepare(`UPDATE users SET password_hash = ?, twofa_hash = NULL, twofa_hint = NULL,
-          public_key = ?, encrypted_private_key = ? WHERE id = ?`)
-        .run(authHash, publicKey, sealedKey, row.id);
-      db.prepare('DELETE FROM sessions WHERE user_id = ?').run(row.id);
-    });
-    hub.disconnectUser(row.id, 'password_reset');
-    postInfo(row.id, 'Пароль был изменён администратором. Все сеансы завершены. Если вы не запрашивали сброс, сразу свяжитесь с администрацией.');
-    logModeration(req.userId, 'reset_password', 'user', row.id, row.username);
-    res.json({ username: row.username, password });
   });
 
   // Удалить пользователя насовсем вместе со всеми его сообщениями.

@@ -268,7 +268,7 @@ private fun ColorScheme.seasonal(season: SeasonStyle, dark: Boolean): ColorSchem
     )
 }
 
-/** Обои чата: мягкие градиенты в цветах темы и зимние наборы. */
+/** Обои чата: базовые цвета; узоры рисует WallpaperBackground. */
 @Composable
 fun wallpaperColors(index: Int): List<Color> {
     val c = MaterialTheme.colorScheme
@@ -295,6 +295,12 @@ fun wallpaperColors(index: Int): List<Color> {
         9 -> listOf(Color(0xFF0A0F1E), Color(0xFF141C33), Color(0xFF27324F))
         10 -> listOf(Color(0xFF0C1E1A), Color(0xFF17453A), Color(0xFF2C6E54))
         11 -> listOf(Color(0xFF070A18), Color(0xFF131A3A), Color(0xFF2A1F52))
+        12 -> listOf(Color(0xFF0E1C2E), Color(0xFF1E3A5A), Color(0xFF2C5478))
+        13 -> listOf(Color(0xFF1A1230), Color(0xFF2E1E4E), Color(0xFF4A2E78))
+        14 -> listOf(Color(0xFF060C16), Color(0xFF122236), Color(0xFF1E3A54))
+        15 -> listOf(Color(0xFF050814), Color(0xFF181236), Color(0xFF2A1E50))
+        16 -> listOf(Color(0xFF04202C), Color(0xFF0A4658), Color(0xFF14708A))
+        17 -> listOf(Color(0xFF12281A), Color(0xFF2A5536), Color(0xFF4A8454))
         else -> listOf(c.surface, c.surface)
     }
 }
@@ -302,8 +308,8 @@ fun wallpaperColors(index: Int): List<Color> {
 val WallpaperNames = listOf(
     "Как в сезоне", "Закат", "Туман", "Аврора", "Графит",
     "Мороз", "Снежинки", "Северное сияние", "Лёд", "Зимняя ночь", "Ели", "Звёзды",
+    "Телефоны", "Мессенджеры", "Город", "Космос", "Волны", "Листья",
 )
-
 private class SeasonalParticle(
     val x: Float,
     val phase: Float,
