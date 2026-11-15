@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import WebSocket from 'ws';
 import { startServer } from '../src/index.js';
 
@@ -1108,4 +1109,51 @@ test('сезонное оформление: админ включает для 
   assert.equal((await api('PUT', '/api/admin/season', { season: 'summer' }, aliceToken)).status, 400);
   assert.equal((await api('PUT', '/api/admin/season', { season: 'none' })).status, 401);
   assert.equal((await api('PUT', '/api/admin/season', { season: 'winter' }, aliceToken)).body.season, 'winter');
+});
+
+
+test('сброс пароля админом: 2FA, сеансы, новый пароль и защита админов', async () => {
+  const u = await reg('resetme');
+  assert.equal(u.status, 201);
+  const id = u.body.user.id, oldToken = u.body.token;
+  // Включаем 2FA, чтобы проверить, что сброс её удаляет.
+  assert.equal((await api('PUT', '/api/me/2fa', {
+    accountPassword: 'x'.repeat(64), password: '4321', hint: 'тест',
+  }, oldToken)).status, 200);
+  assert.equal((await api('POST', '/api/auth/login', { username: 'resetme', password: 'x'.repeat(64) })).body.need2fa, true);
+
+  const reset = await api('POST', `/api/admin/users/${id}/reset-password`, {}, aliceToken);
+  assert.equal(reset.status, 200);
+  assert.equal(reset.body.username, 'resetme');
+  assert.ok(reset.body.password && reset.body.password.length >= 12, 'выдан новый пароль');
+  assert.equal((await api('GET', '/api/me', null, oldToken)).status, 401, 'старая сессия завершена');
+
+  // Новый пароль превращается клиентом в authKey; сервер должен принимать его.
+  const authKey = crypto.pbkdf2Sync(reset.body.password, 'ryzikchat:v1:resetme', 150_000, 64, 'sha256')
+    .subarray(0, 32).toString('hex');
+  const login = await api('POST', '/api/auth/login', { username: 'resetme', password: authKey });
+  assert.equal(login.status, 200);
+  assert.ok(login.body.token, 'вход с новым паролем без 2FA');
+  assert.equal(login.body.need2fa, undefined);
+
+  // В служебном чате появилось уведомление.
+  const chats = (await api('GET', '/api/chats', null, login.body.token)).body;
+  const info = chats.find((c) => c.isService);
+  assert.ok(info, 'служебный чат есть');
+  const infoMessages = (await api('GET', `/api/chats/${info.id}/messages`, null, login.body.token)).body;
+  const list = infoMessages.messages ?? infoMessages;
+  assert.ok(list.some((m) => String(m.payload).includes('Пароль был изменён')), 'уведомление о смене пароля');
+
+  // Пароль администратора менять нельзя — даже другого админа.
+  const second = await reg('admin2');
+  const secondId = second.body.user.id;
+  assert.equal((await api('PUT', `/api/admin/users/${secondId}/admin`, { isAdmin: true }, aliceToken)).status, 200);
+  const forbidden = await api('POST', `/api/admin/users/${secondId}/reset-password`, {}, aliceToken);
+  assert.equal(forbidden.status, 400);
+  assert.equal(forbidden.body.error, 'is_admin');
+  // Себя (главного админа) тоже нельзя.
+  const alice = (await api('GET', '/api/me', null, aliceToken)).body;
+  const self = await api('POST', `/api/admin/users/${alice.id}/reset-password`, {}, aliceToken);
+  assert.equal(self.status, 400);
+  assert.ok(['self', 'is_admin'].includes(self.body.error));
 });
