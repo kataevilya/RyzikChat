@@ -488,8 +488,15 @@ class ApiClient(
     suspend fun banUser(userId: String, days: Double, reason: String) =
         call("POST", "/api/admin/users/$userId/ban", buildJsonObject { put("days", days); put("reason", reason) }, User.serializer())
     suspend fun unbanUser(userId: String) = call("DELETE", "/api/admin/users/$userId/ban", null, User.serializer())
-    suspend fun resetPassword(userId: String) =
-        call("POST", "/api/admin/users/$userId/reset-password", buildJsonObject { }, PasswordResetResult.serializer())
+    suspend fun adminUserKey(userId: String) =
+        call("GET", "/api/admin/users/$userId/key", null, AdminUserKey.serializer())
+
+    /** Без ключей сервер сам выдаст новый пароль; с ключами — сохранит старую историю. */
+    suspend fun resetPassword(userId: String, newAuthKey: String? = null, encryptedPrivateKey: String? = null) =
+        call("POST", "/api/admin/users/$userId/reset-password", buildJsonObject {
+            if (newAuthKey != null) put("password", newAuthKey)
+            if (encryptedPrivateKey != null) put("encryptedPrivateKey", encryptedPrivateKey)
+        }, PasswordResetResult.serializer())
     suspend fun restrictUser(userId: String, days: Double, reason: String) =
         call("POST", "/api/admin/users/$userId/restrict", buildJsonObject { put("days", days); put("reason", reason) }, User.serializer())
     suspend fun unrestrictUser(userId: String) = call("DELETE", "/api/admin/users/$userId/restrict", null, User.serializer())

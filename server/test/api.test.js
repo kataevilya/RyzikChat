@@ -1157,3 +1157,24 @@ test('сброс пароля админом: 2FA, сеансы, новый па
   assert.equal(self.status, 400);
   assert.ok(['self', 'is_admin'].includes(self.body.error));
 });
+
+
+test('сброс с сохранением истории: сервер принимает новый ключ клиента', async () => {
+  const u = await reg('preserveme');
+  const id = u.body.user.id, oldToken = u.body.token;
+  const key = await api('GET', `/api/admin/users/${id}/key`, null, aliceToken);
+  assert.equal(key.status, 200);
+  assert.ok(key.body.encryptedPrivateKey, 'зашифрованный ключ доступен админу');
+  const fresh = 'q'.repeat(24);
+  const newAuth = crypto.pbkdf2Sync(fresh, 'ryzikchat:v1:preserveme', 150_000, 64, 'sha256').subarray(0, 32).toString('hex');
+  const sealed = 'c2VhbGVkLWJ5LWNsaWVudC1rZXktZm9yLXRlc3Q=';
+  const reset = await api('POST', `/api/admin/users/${id}/reset-password`, { password: newAuth, encryptedPrivateKey: sealed }, aliceToken);
+  assert.equal(reset.status, 200);
+  assert.equal(reset.body.password, null, 'пароль уже задан клиентом');
+  assert.equal((await api('GET', '/api/me', null, oldToken)).status, 401);
+  const login = await api('POST', '/api/auth/login', { username: 'preserveme', password: newAuth });
+  assert.equal(login.status, 200);
+  assert.ok(login.body.token);
+  const after = await api('GET', `/api/admin/users/${id}/key`, null, aliceToken);
+  assert.equal(after.body.encryptedPrivateKey, sealed, 'ключ заменён на присланный клиентом');
+});

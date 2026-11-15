@@ -2310,17 +2310,44 @@ export function createApp({ db, dataDir, hub, adminUsernames = [], updateSource 
     res.json(adminUserView(getUserRow.get(row.id)));
   });
 
-  // Сброс пароля пользователя: 2FA, сеансы и ключ шифрования заменяются.
+  // Админ получает только зашифрованный приватный ключ — расшифровать его можно
+  // старым паролем на клиенте, сервер этого не умеет.
+  app.get('/api/admin/users/:id/key', adminOnly, (req, res) => {
+    const row = moderatedTarget(req);
+    res.json({
+      id: row.id, username: row.username, publicKey: row.public_key,
+      encryptedPrivateKey: row.encrypted_private_key,
+    });
+  });
+
+  // Сброс пароля пользователя: 2FA и сеансы. Если клиент прислал новый authKey
+  // и заново запечатанный приватный ключ, история сохраняется; иначе выдаётся
+  // новый пароль и новая пара ключей (старые сообщения станут недоступны).
   // Аккаунты администраторов защищены — moderatedTarget не даст их изменить.
   app.post('/api/admin/users/:id/reset-password', adminOnly, (req, res) => {
     const row = moderatedTarget(req);
-    const password = randomPassword(16);
-    const keys = derivePasswordKeys(row.username, password);
-    const identity = newIdentity(keys.vaultKey);
+    const providedAuthKey = req.body?.password;
+    const providedSealed = req.body?.encryptedPrivateKey;
+    let password = null;
+    let publicKey = row.public_key;
+    let sealedKey;
+    let authHash;
+    if (typeof providedAuthKey === 'string' && providedAuthKey.length >= 16 && typeof providedSealed === 'string' && providedSealed.length > 20) {
+      // Клиент расшифровал старый ключ старым паролем и запечатал новым.
+      authHash = hashPassword(providedAuthKey);
+      sealedKey = providedSealed;
+    } else {
+      password = randomPassword(16);
+      const keys = derivePasswordKeys(row.username, password);
+      const identity = newIdentity(keys.vaultKey);
+      authHash = hashPassword(keys.authKey);
+      publicKey = identity.publicKey;
+      sealedKey = identity.encryptedPrivateKey;
+    }
     tx(db, () => {
       db.prepare(`UPDATE users SET password_hash = ?, twofa_hash = NULL, twofa_hint = NULL,
           public_key = ?, encrypted_private_key = ? WHERE id = ?`)
-        .run(hashPassword(keys.authKey), identity.publicKey, identity.encryptedPrivateKey, row.id);
+        .run(authHash, publicKey, sealedKey, row.id);
       db.prepare('DELETE FROM sessions WHERE user_id = ?').run(row.id);
     });
     hub.disconnectUser(row.id, 'password_reset');
