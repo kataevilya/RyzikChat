@@ -163,7 +163,8 @@ fun FluxScreen(onBack: () -> Unit, onOpenPremium: () -> Unit) {
                     Column {
                         Text("Ваш баланс", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelLarge)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Bolt, null, tint = Color.White, modifier = Modifier.size(40.dp))
+                            FluxIcon(size = 40.dp)
+                            Spacer(Modifier.width(8.dp))
                             Text(formatFlux(balance), color = Color.White, fontSize = 44.sp, fontWeight = FontWeight.ExtraBold)
                         }
                         Text(
