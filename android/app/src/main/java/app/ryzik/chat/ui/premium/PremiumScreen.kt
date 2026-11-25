@@ -306,7 +306,7 @@ private fun AppIconPicker(isPremium: Boolean, onError: (String) -> Unit) {
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Image(
-                                    painterResource(if (icon.key == "default") R.drawable.ic_launcher_foreground else R.drawable.ic_launcher_foreground_light),
+                                    painterResource(when (icon.key) { "default" -> R.drawable.ic_launcher_foreground; "mascot" -> R.drawable.ic_launcher_foreground_mascot; else -> R.drawable.ic_launcher_foreground_light }),
                                     contentDescription = null,
                                     modifier = Modifier.requiredSize(84.dp),
                                 )

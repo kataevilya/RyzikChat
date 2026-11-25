@@ -540,7 +540,7 @@ export function settingsPage(name) {
         const [info] = await Promise.all([api.flux(), store.refreshMe()]);
         const me = store.me;
         clear(body);
-        body.append(h('div.flux-card', null, h('div', null, 'Баланс'), h('div.fb', null, `${info.balance} FLUX`),
+        body.append(h('div.flux-card', null, h('div.flux-card-top', null, h('img', { class: 'flux-logo', src: '/app/flux-logo.png', alt: 'FLUX' }), h('div', null, h('div.flux-card-label', null, 'Баланс'), h('div.fb', null, `${info.balance} FLUX`))),
           h('div', { style: { opacity: .9, marginTop: '6px' } }, me.isPremium ? `Премиум ${me.premiumUntil ? 'до ' + new Date(me.premiumUntil).toLocaleDateString('ru-RU') : 'бессрочно'}` : 'Премиум не подключён')));
         body.append(section('Премиум',
           listItem({ leading: h('span.premium-star', null, icon('star', 'fill')), title: `Премиум на месяц — ${info.premiumMonthPrice} FLUX`, subtitle: 'Цвета профиля, эмодзи-статус, премиум-цвета темы, файлы до 2 ГБ', onClick: async () => {

@@ -26,7 +26,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Sell
@@ -86,15 +87,18 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Цвета FLUX: от янтарного к фиолетовому. */
-val FluxGradient = listOf(Color(0xFFFFB443), Color(0xFFFF6B6B), Color(0xFF9C4DFF))
+/** Цвета FLUX: фирменный красный градиент. */
+val FluxGradient = listOf(Color(0xFFFF6A3D), Color(0xFFFE4F32), Color(0xFFE53935))
 
-/** Значок FLUX: молния в градиентном круге. */
+/** Значок FLUX: фирменный логотип. */
 @Composable
 fun FluxIcon(size: Dp = 20.dp) {
-    Box(Modifier.size(size).clip(CircleShape).background(Brush.linearGradient(FluxGradient)), contentAlignment = Alignment.Center) {
-        Icon(Icons.Rounded.Bolt, null, tint = Color.White, modifier = Modifier.size(size * 0.72f))
-    }
+    Image(
+        painterResource("flux_logo.png"),
+        contentDescription = "FLUX",
+        modifier = Modifier.size(size),
+        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+    )
 }
 
 /** Сумма с значком: «⚡ 1 000». */

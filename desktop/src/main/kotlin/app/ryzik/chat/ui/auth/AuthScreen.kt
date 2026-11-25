@@ -10,6 +10,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,6 +58,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -131,6 +133,11 @@ fun AuthScreen(onBack: () -> Unit, onOpenTerms: () -> Unit) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Назад")
         }
         Spacer(Modifier.height(8.dp))
+        Image(
+            painterResource("mascot.png"),
+            contentDescription = null,
+            modifier = Modifier.size(112.dp).padding(bottom = 8.dp),
+        )
         AnimatedContent(register, label = "title", transitionSpec = {
             (slideInHorizontally { if (targetState) it else -it } + fadeIn()) togetherWith
                 (slideOutHorizontally { if (targetState) -it else it } + fadeOut())

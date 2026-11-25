@@ -499,12 +499,30 @@ class Store extends Emitter {
     };
   }
 
+  _isTransientSendError(e) {
+    if (e instanceof ApiError) return e.status >= 502 && e.status <= 504;
+    return e instanceof TypeError || (e && e.name === 'TypeError');
+  }
+
+  async _withSendRetry(fn) {
+    let last;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try { return await fn(); }
+      catch (e) {
+        last = e;
+        if (!this._isTransientSendError(e) || attempt === 4) throw e;
+        await new Promise((r) => setTimeout(r, [1500, 3000, 5000, 8000][attempt]));
+      }
+    }
+    throw last;
+  }
+
   sendContent(chatId, type, content, replyTo, forwardedFrom, pendingId) {
     const clientId = pendingId ?? uuid();
     if (!pendingId) this.merge(chatId, [this.pending(chatId, clientId, type, content, replyTo, forwardedFrom)]);
     (async () => {
       try {
-        const sent = await this.postMessage(chatId, type, content, replyTo, forwardedFrom, clientId);
+        const sent = await this._withSendRetry(() => this.postMessage(chatId, type, content, replyTo, forwardedFrom, clientId));
         this.decryptCache.set(`${sent.id}:0`, content);
         this.merge(chatId, [await this.decrypt(sent)]);
         this.bumpChat(sent);
@@ -575,10 +593,10 @@ class Store extends Emitter {
       const plain = new Uint8Array(await blob.arrayBuffer());
       const enc = await E2E.encryptFile(plain);
       this.setProgress(chatId, clientId, 0.1);
-      const up = await api.upload(new Blob([enc.data], { type: 'application/octet-stream' }), 'application/octet-stream', (p) => this.setProgress(chatId, clientId, 0.1 + 0.9 * p));
+      const up = await this._withSendRetry(() => api.upload(new Blob([enc.data], { type: 'application/octet-stream' }), 'application/octet-stream', (p) => this.setProgress(chatId, clientId, 0.1 + 0.9 * p)));
       if (localUrl) this.media.set(up.id, { state: 'ready', url: localUrl });
       const finalContent = { ...content, file: { ...content.file, id: up.id, key: enc.key } };
-      const sent = await this.postMessage(chatId, type, finalContent, replyTo, null, clientId);
+      const sent = await this._withSendRetry(() => this.postMessage(chatId, type, finalContent, replyTo, null, clientId));
       this.decryptCache.set(`${sent.id}:0`, finalContent);
       const ui = await this.decrypt(sent);
       ui.localUrl = localUrl;

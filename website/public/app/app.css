@@ -464,6 +464,9 @@ button:active:not(:disabled) { transform: scale(.98); }
 .mt8 { margin-top: 8px; } .mt16 { margin-top: 16px; }
 .hidden { display: none !important; }
 .flux-card { margin: 8px 16px; border-radius: 28px; padding: 22px; background: linear-gradient(135deg, #8E5CFF, #FF5CA8 60%, #FFB443); color: #fff; }
+.flux-card-top { display: flex; align-items: center; gap: 12px; }
+.flux-logo { width: 52px; height: 52px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,.18)); }
+.flux-card-label { opacity: .92; font-size: 14px; }
 .flux-card .fb { font-size: 34px; font-weight: 800; }
 .member-role { font-size: 12px; color: var(--primary); font-weight: 700; }
 .invite-box { display: flex; align-items: center; gap: 8px; background: var(--sc-highest); border-radius: 16px; padding: 4px 4px 4px 14px; font-family: ui-monospace, monospace; font-size: 14px; color: var(--on-surface); }

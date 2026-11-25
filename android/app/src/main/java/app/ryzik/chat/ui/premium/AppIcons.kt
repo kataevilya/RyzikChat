@@ -15,6 +15,7 @@ object AppIcons {
     val all = listOf(
         AppIcon("default", "Классическая", listOf(Color.White, Color.White)),
         AppIcon("winter", "Зима", listOf(Color(0xFF0B1A2E), Color(0xFF1B3550), Color(0xFF2E5677))),
+        AppIcon("mascot", "Маскот", listOf(Color(0xFFF3EEFF), Color(0xFFE5D8FF), Color(0xFFD0BCFF))),
         AppIcon("night", "Ночь", listOf(Color(0xFF1B1F3B), Color(0xFF2D2A5A), Color(0xFF0E0E1A))),
         AppIcon("sunset", "Закат", listOf(Color(0xFFFF8A3D), Color(0xFFFF5E62), Color(0xFFC2185B))),
         AppIcon("mint", "Мята", listOf(Color(0xFF1DE9B6), Color(0xFF26A69A), Color(0xFF00796B))),

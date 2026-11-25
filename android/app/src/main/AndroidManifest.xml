@@ -133,6 +133,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+        <activity-alias
+            android:name=".IconMascot"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_launcher_mascot"
+            android:roundIcon="@mipmap/ic_launcher_mascot"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <service
             android:name=".notify.ConnectionService"

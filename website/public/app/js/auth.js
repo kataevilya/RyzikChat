@@ -13,7 +13,7 @@ export function authScreen() {
 
   function render() {
     card.replaceChildren();
-    card.append(h('img.auth-logo', { src: '/app/icon.svg', alt: '' }));
+    card.append(h('img.auth-logo.auth-mascot', { src: '/app/mascot.png', alt: 'RyzikChat' }));
     if (step) return render2fa();
     card.append(
       h('h1', null, 'RyzikChat'),

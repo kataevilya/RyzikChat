@@ -973,12 +973,32 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
         sendContent(chatId, "text", Content(text = trimmed), replyTo, null)
     }
 
+    private fun isTransientSendError(e: Throwable): Boolean = when (e) {
+        is IOException -> true
+        is ApiException -> e.status in 502..504 || e.code == "http_502" || e.code == "http_503" || e.code == "http_504"
+        else -> false
+    }
+
+    private suspend fun <T> withSendRetry(block: suspend () -> T): T {
+        var last: Throwable? = null
+        for (attempt in 0..4) {
+            try {
+                return block()
+            } catch (e: Throwable) {
+                last = e
+                if (!isTransientSendError(e) || attempt == 4) throw e
+                delay(when (attempt) { 0 -> 1500L; 1 -> 3000L; 2 -> 5000L; else -> 8000L })
+            }
+        }
+        throw last!!
+    }
+
     private fun sendContent(chatId: String, type: String, content: Content, replyTo: String?, forwardedFrom: String?, pendingId: String? = null) {
         val clientId = pendingId ?: UUID.randomUUID().toString()
         if (pendingId == null) merge(chatId, listOf(pending(chatId, clientId, type, content, replyTo, forwardedFrom)))
         scope.launch {
             try {
-                val sent = postMessage(chatId, type, content, replyTo, forwardedFrom, clientId)
+                val sent = withSendRetry { postMessage(chatId, type, content, replyTo, forwardedFrom, clientId) }
                 decryptCache["${sent.id}:0"] = Decrypted(content)
                 merge(chatId, listOf(decrypt(sent)))
                 bumpChat(sent)
@@ -1108,13 +1128,13 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
                 val key = local.inputStream().use { input ->
                     enc.outputStream().use { out -> E2E.encryptFile(input, out) { setProgress(chatId, clientId, 0.1f * it / total) } }
                 }
-                val up = api.upload(enc, "application/octet-stream") { setProgress(chatId, clientId, 0.1f + 0.9f * it) }
+                val up = withSendRetry { api.upload(enc, "application/octet-stream") { setProgress(chatId, clientId, 0.1f + 0.9f * it) } }
                 // Отправленный файл уже лежит у нас в расшифрованном виде.
                 val ready = File(mediaDir, up.id)
                 local.copyTo(ready, overwrite = true)
                 media.getOrPut(up.id) { MutableStateFlow(MediaState.Idle) }.value = MediaState.Ready(ready)
                 val finalContent = content.copy(file = content.file!!.copy(id = up.id, key = key))
-                val sent = postMessage(chatId, type, finalContent, replyTo, null, clientId)
+                val sent = withSendRetry { postMessage(chatId, type, finalContent, replyTo, null, clientId) }
                 decryptCache["${sent.id}:0"] = Decrypted(finalContent)
                 merge(chatId, listOf(decrypt(sent).copy(localFile = ready)))
                 bumpChat(sent)
