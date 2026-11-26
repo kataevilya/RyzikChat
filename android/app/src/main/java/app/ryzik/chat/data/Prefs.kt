@@ -58,6 +58,8 @@ data class AppSettings(
     val inAppNotifications: Boolean = true,
     /** Уведомления и звонки со всех добавленных аккаунтов, а не только с открытого. */
     val allAccountsNotifications: Boolean = true,
+    /** Открыт режим разработчика (7 нажатий на версию в «О приложении»). */
+    val devMode: Boolean = false,
 )
 
 /** Данные текущей сессии. Приватный ключ хранится обёрнутым ключом Android Keystore. */
@@ -117,6 +119,7 @@ class Prefs(private val context: Context) {
         val reactionNotif = booleanPreferencesKey("reaction_notifications")
         val inAppNotif = booleanPreferencesKey("in_app_notifications")
         val allAccountsNotif = booleanPreferencesKey("all_accounts_notifications")
+        val devMode = booleanPreferencesKey("dev_mode")
 
         val server = stringPreferencesKey("server_url")
         val token = stringPreferencesKey("token")
@@ -162,6 +165,7 @@ class Prefs(private val context: Context) {
             reactionNotifications = p[K.reactionNotif] ?: d.reactionNotifications,
             inAppNotifications = p[K.inAppNotif] ?: d.inAppNotifications,
             allAccountsNotifications = p[K.allAccountsNotif] ?: d.allAccountsNotifications,
+            devMode = p[K.devMode] ?: d.devMode,
         )
     }
 
@@ -199,6 +203,7 @@ class Prefs(private val context: Context) {
             p[K.reactionNotif] = s.reactionNotifications
             p[K.inAppNotif] = s.inAppNotifications
             p[K.allAccountsNotif] = s.allAccountsNotifications
+            p[K.devMode] = s.devMode
         }
     }
 

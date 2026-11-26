@@ -2,6 +2,10 @@ package app.ryzik.chat
 
 import app.ryzik.chat.ui.flux.FluxScreen
 import app.ryzik.chat.ui.flux.ConfettiOverlay
+import app.ryzik.chat.ui.dev.DevFlags
+import app.ryzik.chat.ui.dev.DevMenuScreen
+import app.ryzik.chat.ui.dev.FpsChip
+import app.ryzik.chat.ui.dev.LayoutGridOverlay
 import app.ryzik.chat.ui.chat.StickerViewer
 import app.ryzik.chat.ui.chat.StickerPackDialog
 import android.Manifest
@@ -136,6 +140,9 @@ class MainActivity : ComponentActivity() {
                         }
                         // Конфетти при подарке.
                         if (auth is AuthState.LoggedIn) ConfettiOverlay()
+                        // Отладка интерфейса из меню разработчика.
+                        if (DevFlags.layoutGrid) LayoutGridOverlay()
+                        if (DevFlags.fpsOverlay) FpsChip(Modifier.align(Alignment.TopEnd))
                         // Премиум закончился — иконка приложения снова зимняя.
                         val premium = (auth as? AuthState.LoggedIn)?.me?.isPremium
                         LaunchedEffect(premium) { if (premium != null) AppIcons.enforce(this@MainActivity, premium) }
@@ -374,8 +381,9 @@ private fun MainNav(pendingChat: String?, onPendingHandled: () -> Unit) {
         composable("flux") { FluxScreen(onBack = { nav.popBackStack() }, onOpenPremium = { nav.go("premium") }) }
         composable("settings/{section}") { e ->
             val section = SettingsSection.valueOf(e.arguments?.getString("section")!!)
-            SettingsSectionScreen(section, onBack = { nav.popBackStack() }, onOpenTerms = { nav.go("terms") }, onOpenPremium = { nav.go("premium") })
+            SettingsSectionScreen(section, onBack = { nav.popBackStack() }, onOpenTerms = { nav.go("terms") }, onOpenPremium = { nav.go("premium") }, onOpenDev = { nav.go("dev") })
         }
+        composable("dev") { DevMenuScreen(onBack = { nav.popBackStack() }) }
         composable("terms") { TermsScreen(onBack = { nav.popBackStack() }) }
         composable("admin") { AdminScreen(onBack = { nav.popBackStack() }, onOpenProfile = { nav.go("profile/$it") }) }
     }

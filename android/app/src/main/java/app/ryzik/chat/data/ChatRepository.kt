@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
 import app.ryzik.chat.crypto.E2E
+import app.ryzik.chat.dev.DevLog
 import app.ryzik.chat.crypto.KeyVault
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -419,6 +420,21 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
     fun myFingerprint(): String = privateKey?.let { E2E.fingerprint(E2E.publicFromPrivate(it)) } ?: ""
 
     fun fingerprintOf(user: User): String = runCatching { E2E.fingerprint(E2E.unb64(user.publicKey)) }.getOrDefault("—")
+
+    /** Дев-меню: отправить свой публичный ключ на сервер. true — ключ на сервере уже правильный. */
+    suspend fun pushPublicKey(): Boolean {
+        val priv = privateKey ?: return false
+        val mine = E2E.b64(E2E.publicFromPrivate(priv))
+        val me = (auth.value as? AuthState.LoggedIn)?.me ?: return false
+        if (me.publicKey == mine) return true
+        return runCatching { rememberUsers(listOf(api.setPublicKey(mine))); true }.getOrDefault(false)
+    }
+
+    /** Дев-меню: переподключить websocket, не перезапуская приложение. */
+    fun reconnectSocket() { if (auth.value is AuthState.LoggedIn) connectSocket() }
+
+    /** Дев-меню: сколько медиа лежит в кэше. */
+    fun cacheBytes(): Long = cacheSize()
 
     // ================= Пользователи =================
 
@@ -935,6 +951,7 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
     private fun warnBrokenKey(chatId: String, u: User) {
         if (!brokenKeyWarned.add(chatId + "|" + u.id)) return
         val who = u.username.takeIf { it.isNotBlank() }?.let { "@$it" } ?: u.displayName
+        DevLog.log("ключи", "битый ключ у ${u.username} (${u.publicKey.length} симв.) — пропускаем")
         _sendErrors.tryEmit(chatId to "У $who повреждён ключ шифрования — сообщение уйдёт без него. Пусть $who войдёт в обновлённое приложение.")
     }
 
@@ -943,7 +960,8 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
         val priv = privateKey ?: return
         val mine = E2E.b64(E2E.publicFromPrivate(priv))
         if (me.publicKey == mine) return
-        runCatching { rememberUsers(listOf(api.setPublicKey(mine))) }
+        val ok = runCatching { rememberUsers(listOf(api.setPublicKey(mine))); true }.getOrDefault(false)
+        DevLog.log("ключи", if (ok) "свой публичный ключ восстановлен на сервере" else "не удалось отправить свой ключ")
     }
 
     private fun recipientsOf(chatId: String): Map<String, ByteArray> {
@@ -1037,7 +1055,9 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
                 throw e
             } catch (e: Exception) {
                 markFailed(chatId, clientId)
-                _sendErrors.tryEmit(chatId to sendErrorText(e))
+                val text = sendErrorText(e)
+            DevLog.log("отправка", text)
+            _sendErrors.tryEmit(chatId to text)
             }
         }
     }
@@ -1176,7 +1196,9 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
                 throw e
             } catch (e: Exception) {
                 markFailed(chatId, clientId)
-                _sendErrors.tryEmit(chatId to sendErrorText(e))
+                val text = sendErrorText(e)
+            DevLog.log("отправка", text)
+            _sendErrors.tryEmit(chatId to text)
             } finally {
                 enc.delete()
             }
@@ -1335,6 +1357,7 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
                 val ws = api.http.newWebSocket(Request.Builder().url(wsUrl).build(), object : WebSocketListener() {
                     override fun onOpen(webSocket: WebSocket, response: okhttp3.Response) {
                         _connected.value = true
+                        DevLog.log("сеть", "соединение с сервером установлено")
                         backoff = 1000L
                         scope.launch { resync() }
                     }
@@ -1356,6 +1379,7 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
 
                     override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
                         _connected.value = false
+                        DevLog.log("сеть", "обрыв: ${t.message ?: t.javaClass.simpleName}")
                         closed.complete(Unit)
                     }
                 })

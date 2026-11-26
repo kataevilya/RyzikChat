@@ -425,7 +425,7 @@ private fun UpdateBadge() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsSectionScreen(section: SettingsSection, onBack: () -> Unit, onOpenTerms: () -> Unit, onOpenPremium: () -> Unit = {}) {
+fun SettingsSectionScreen(section: SettingsSection, onBack: () -> Unit, onOpenTerms: () -> Unit, onOpenPremium: () -> Unit = {}, onOpenDev: () -> Unit = {}) {
     val app = RyzikApp.instance
     val settings by app.prefs.settings.collectAsState(initial = AppSettings())
     val scope = rememberCoroutineScope()
@@ -454,7 +454,7 @@ fun SettingsSectionScreen(section: SettingsSection, onBack: () -> Unit, onOpenTe
                 SettingsSection.Ai -> AiSettings(settings, ::update)
                 SettingsSection.Api -> ApiSettings()
                 SettingsSection.Updates -> UpdatesSettings()
-                SettingsSection.About -> AboutSettings(onOpenTerms)
+                SettingsSection.About -> AboutContent(onOpenTerms, onOpenDev)
             }
             Spacer(Modifier.height(32.dp))
         }
@@ -1143,23 +1143,6 @@ private fun ApiSettings() {
         supportingContent = { Text("Никому не передавайте: с ним можно читать ваши чаты от вашего имени") },
         leadingContent = { Icon(Icons.Rounded.Lock, null) },
         modifier = Modifier.clickable { showToken = !showToken },
-    )
-}
-
-@Composable
-private fun AboutSettings(onOpenTerms: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        app.ryzik.chat.ui.components.EmptyIcon(Icons.Rounded.Forum)
-        Spacer(Modifier.height(12.dp))
-        Text("RyzikChat", style = MaterialTheme.typography.headlineMedium)
-        Text("Версия ${BuildConfig.VERSION_NAME}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(12.dp))
-        Text("Мессенджер со сквозным шифрованием, своим сервером и дизайном Material You.", style = MaterialTheme.typography.bodyMedium)
-    }
-    ListItem(
-        headlineContent = { Text("Правила использования") },
-        leadingContent = { Icon(Icons.Rounded.Description, null) },
-        modifier = Modifier.clickable(onClick = onOpenTerms),
     )
 }
 
