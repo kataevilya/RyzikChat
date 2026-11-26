@@ -230,7 +230,7 @@ private fun AboutHero(devMode: Boolean, taps: Int, onVersionTap: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .height(224.dp)
+            .height(252.dp)
             .clip(RoundedCornerShape(30.dp))
             .background(
                 Brush.linearGradient(
@@ -266,13 +266,13 @@ private fun AboutHero(devMode: Boolean, taps: Int, onVersionTap: () -> Unit) {
             )
         }
         Column(
-            Modifier.fillMaxSize().padding(20.dp),
+            Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             Box(
                 Modifier
-                    .size(82.dp)
+                    .size(74.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.16f))
                     .border(1.dp, Color.White.copy(alpha = 0.28f), CircleShape),
@@ -282,17 +282,17 @@ private fun AboutHero(devMode: Boolean, taps: Int, onVersionTap: () -> Unit) {
                     painterResource(R.drawable.ic_launcher_foreground),
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(52.dp),
+                    modifier = Modifier.size(48.dp),
                 )
             }
             Spacer(Modifier.height(12.dp))
-            Text("RyzikChat", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp)
+            Text("RyzikChat", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp)
             Text(
                 "Сквозное шифрование · свой сервер",
                 color = Color.White.copy(alpha = 0.78f),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(12.dp))
             Box(
                 Modifier
                     .clip(RoundedCornerShape(50))
