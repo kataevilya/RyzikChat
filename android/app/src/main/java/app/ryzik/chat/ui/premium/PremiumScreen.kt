@@ -306,7 +306,9 @@ private fun AppIconPicker(isPremium: Boolean, onError: (String) -> Unit) {
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Image(
-                                    painterResource(when (icon.key) { "default" -> R.drawable.ic_launcher_foreground; "mascot" -> R.drawable.ic_launcher_foreground_mascot; else -> R.drawable.ic_launcher_foreground_light }),
+                                    // Только PNG и векторные drawable: painterResource не умеет layer-list
+                                    // и падает с IllegalArgumentException на любом XML не-векторе.
+                                    painterResource(when (icon.key) { "default" -> R.drawable.ic_launcher_foreground; "mascot" -> R.drawable.ic_launcher_mascot_foreground; else -> R.drawable.ic_launcher_foreground_light }),
                                     contentDescription = null,
                                     modifier = Modifier.requiredSize(84.dp),
                                 )
