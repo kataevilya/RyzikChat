@@ -306,6 +306,7 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
 
     private fun onLoggedIn(me: User) {
         rememberUsers(listOf(me))
+        scope.launch { healOwnKey(me) }
         scope.launch { prefs.updateAccountInfo(me.id, me.displayName, me.avatarFileId) }
         _auth.value = AuthState.LoggedIn(me)
         scope.launch { refreshChats() }
@@ -928,12 +929,32 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
         else -> c.text
     }
 
+    /** Предупреждаем один раз за запуск: чей-то ключ повреждён и человек не прочитает сообщение. */
+    private val brokenKeyWarned = HashSet<String>()
+
+    private fun warnBrokenKey(chatId: String, u: User) {
+        if (!brokenKeyWarned.add(chatId + "|" + u.id)) return
+        val who = u.username.takeIf { it.isNotBlank() }?.let { "@$it" } ?: u.displayName
+        _sendErrors.tryEmit(chatId to "У $who повреждён ключ шифрования — сообщение уйдёт без него. Пусть $who войдёт в обновлённое приложение.")
+    }
+
+    /** Свой публичный ключ на сервере мог испортиться — тогда нам никто не может писать. Возвращаем правильный. */
+    private suspend fun healOwnKey(me: User) {
+        val priv = privateKey ?: return
+        val mine = E2E.b64(E2E.publicFromPrivate(priv))
+        if (me.publicKey == mine) return
+        runCatching { rememberUsers(listOf(api.setPublicKey(mine))) }
+    }
+
     private fun recipientsOf(chatId: String): Map<String, ByteArray> {
         val chat = chat(chatId) ?: return emptyMap()
         val out = HashMap<String, ByteArray>()
         for (m in chat.members) {
             val u = _users.value[m.user.id] ?: m.user
-            if (u.publicKey.isNotEmpty()) out[u.id] = E2E.unb64(u.publicKey)
+            if (u.publicKey.isEmpty()) continue
+            val key = runCatching { E2E.unb64(u.publicKey) }.getOrNull()
+            // Участник с битым ключом не должен ломать отправку всему чату.
+            if (key != null && key.size == 32) out[u.id] = key else warnBrokenKey(chatId, u)
         }
         // Себе — всегда, чтобы видеть свои сообщения на других устройствах.
         privateKey?.let { out[myId!!] = E2E.publicFromPrivate(it) }

@@ -1,6 +1,6 @@
 {
   "name": "ryzikchat-server",
-  "version": "0.8.21",
+  "version": "0.8.24",
   "description": "Собственный сервер RyzikChat: REST API + WebSocket",
   "type": "module",
   "main": "src/index.js",

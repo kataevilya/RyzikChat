@@ -189,6 +189,10 @@ class ApiClient(
         call(if (blocked) "PUT" else "DELETE", "/api/blocks/$userId", null, User.serializer())
 
     suspend fun logout() = callUnit("POST", "/api/auth/logout")
+    /** Присылаем свой публичный ключ: так лечится испорченный ключ в базе (нужен ровно 32 байта). */
+    suspend fun setPublicKey(publicKey: String) =
+        call("POST", "/api/me/keys", buildJsonObject { put("publicKey", publicKey) }, User.serializer())
+
     suspend fun deleteAccount(authKey: String) = callUnit("POST", "/api/me/delete", buildJsonObject { put("password", authKey) })
     suspend fun deleteChat(chatId: String, forAll: Boolean = true) = callUnit("DELETE", "/api/chats/$chatId?forAll=$forAll")
     suspend fun sessions() = call("GET", "/api/sessions", null, ListSerializer(SessionInfo.serializer()))

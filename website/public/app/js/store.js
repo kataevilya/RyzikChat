@@ -143,6 +143,7 @@ class Store extends Emitter {
     this.refreshContacts().catch(() => {});
     this.refreshStickers().catch(() => {});
     this.connectSocket();
+    this.healOwnKey(me);
   }
 
   async logout() {
@@ -474,10 +475,35 @@ class Store extends Emitter {
     const out = {};
     for (const m of c?.members ?? []) {
       const u = this.users.get(m.user.id) ?? m.user;
-      if (u.publicKey) out[u.id] = E2E.unb64(u.publicKey);
+      if (!u.publicKey) continue;
+      // Участник с битым ключом не должен ломать отправку всему чату (нужно ровно 32 байта).
+      let key = null;
+      try { key = E2E.unb64(u.publicKey); } catch { key = null; }
+      if (key && key.length === 32) out[u.id] = key;
+      else this.warnBrokenKey(chatId, u);
     }
     if (this.privateKey) out[this.myId] = E2E.publicFromPrivate(this.privateKey);
     return out;
+  }
+
+  warnBrokenKey(chatId, u) {
+    this.brokenKeyWarned = this.brokenKeyWarned || new Set();
+    const id = chatId + '|' + u.id;
+    if (this.brokenKeyWarned.has(id)) return;
+    this.brokenKeyWarned.add(id);
+    const who = u.username ? '@' + u.username : (u.displayName || 'участника');
+    this.emit('toast', `У ${who} повреждён ключ шифрования — сообщение уйдёт без него`);
+  }
+
+  /** Свой публичный ключ на сервере мог испортиться — тогда нам никто не может писать. Возвращаем правильный. */
+  async healOwnKey(me) {
+    if (!this.privateKey || !me) return;
+    try {
+      const mine = E2E.b64(E2E.publicFromPrivate(this.privateKey));
+      if (me.publicKey === mine) return;
+      const user = await api.post('/api/me/keys', { publicKey: mine });
+      if (user) this.rememberUsers([user]);
+    } catch { /* не критично */ }
   }
 
   async encryptFor(chatId, content) {

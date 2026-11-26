@@ -10,7 +10,7 @@ async function api(method, url, body, token, raw) {
   let j; try { j = await r.json(); } catch { j = null; }
   return { status: r.status, body: j };
 }
-const reg = (u) => api('POST', '/api/auth/register', { username: u, displayName: u, password: 'x'.repeat(64), publicKey: 'pk', encryptedPrivateKey: 'e' });
+const reg = (u) => api('POST', '/api/auth/register', { username: u, displayName: u, password: 'x'.repeat(64), publicKey: Buffer.alloc(32, 7).toString('base64'), encryptedPrivateKey: 'e' });
 const A = (await reg('alice')).body, B = (await reg('bobby')).body;
 const ta = A.token, tb = B.token;
 const direct = (await api('POST', '/api/chats/direct', { userId: B.user.id }, ta)).body;

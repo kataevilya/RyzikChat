@@ -706,6 +706,7 @@ export function createApp({ db, dataDir, hub, adminUsernames = [], updateSource 
     if (typeof publicKey !== 'string' || typeof encryptedPrivateKey !== 'string') {
       throw new HttpError(400, 'bad_keys', 'Нет ключей шифрования');
     }
+    if (!key32(publicKey)) throw new HttpError(400, 'bad_keys', 'Публичный ключ должен быть 32 байта');
     const name = String(displayName ?? '').trim().slice(0, 64) || username;
     if (db.prepare('SELECT 1 FROM users WHERE username = ?').get(username) || usernameTaken(username)) {
       throw new HttpError(409, 'username_taken', 'Это имя пользователя уже занято');
@@ -918,6 +919,24 @@ export function createApp({ db, dataDir, hub, adminUsernames = [], updateSource 
 
   app.get('/api/me', (req, res) => res.json(meView(req.userId)));
 
+
+  /** Публичный ключ X25519 — ровно 32 байта в base64. Иначе его нельзя использовать для шифрования. */
+  const key32 = (value) => {
+    if (typeof value !== 'string' || !value) return null;
+    const buf = Buffer.from(value, 'base64');
+    return buf.length === 32 ? buf.toString('base64') : null;
+  };
+
+  /**
+   * Клиент присылает свой публичный ключ. Это лечит испорченный ключ в базе:
+   * из-за него другие не могли отправить нам сообщение (X25519 требует ровно 32 байта).
+   */
+  app.post('/api/me/keys', (req, res) => {
+    const key = key32(req.body?.publicKey);
+    if (!key) throw new HttpError(400, 'bad_key', 'Публичный ключ должен быть 32 байта');
+    db.prepare('UPDATE users SET public_key = ? WHERE id = ?').run(key, req.userId);
+    res.json(meView(req.userId));
+  });
   // ---------- контакты и блокировка ----------
 
   app.get('/api/contacts', (req, res) => {
