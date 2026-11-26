@@ -2,7 +2,7 @@ package app.ryzik.chat
 
 import app.ryzik.chat.ui.flux.FluxScreen
 import app.ryzik.chat.ui.flux.ConfettiOverlay
-import app.ryzik.chat.ui.dev.DevFlags
+import app.ryzik.chat.dev.DevFlags
 import app.ryzik.chat.ui.dev.DevMenuScreen
 import app.ryzik.chat.ui.dev.FpsChip
 import app.ryzik.chat.ui.dev.LayoutGridOverlay
