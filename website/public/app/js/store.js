@@ -527,8 +527,9 @@ class Store extends Emitter {
         this.merge(chatId, [await this.decrypt(sent)]);
         this.bumpChat(sent);
       } catch (e) {
+        if (e && e.name === 'AbortError') throw e;
         this.markFailed(chatId, clientId);
-        if (e instanceof ApiError) this.emit('toast', e.message || 'Не удалось отправить');
+        this.emit('toast', errorText(e) || 'Не удалось отправить');
       }
     })();
   }

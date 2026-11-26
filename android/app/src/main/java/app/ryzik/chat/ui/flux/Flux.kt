@@ -88,8 +88,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Цвета FLUX: фирменный красный градиент. */
-val FluxGradient = listOf(Color(0xFFFF6A3D), Color(0xFFFE4F32), Color(0xFFE53935))
+/** Цвета FLUX: фирменный фиолетовый градиент. */
+val FluxGradient = listOf(Color(0xFF7C4DFF), Color(0xFF6028D8), Color(0xFF4A1FB0))
 
 /** Значок FLUX: фирменный логотип. */
 @Composable

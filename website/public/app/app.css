@@ -463,7 +463,7 @@ button:active:not(:disabled) { transform: scale(.98); }
 .center { text-align: center; }
 .mt8 { margin-top: 8px; } .mt16 { margin-top: 16px; }
 .hidden { display: none !important; }
-.flux-card { margin: 8px 16px; border-radius: 28px; padding: 22px; background: linear-gradient(135deg, #8E5CFF, #FF5CA8 60%, #FFB443); color: #fff; }
+.flux-card { margin: 8px 16px; border-radius: 28px; padding: 22px; background: linear-gradient(135deg, #7C4DFF, #6028D8 60%, #9B6BFF); color: #fff; }
 .flux-card-top { display: flex; align-items: center; gap: 12px; }
 .flux-logo { width: 52px; height: 52px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,.18)); }
 .flux-card-label { opacity: .92; font-size: 14px; }

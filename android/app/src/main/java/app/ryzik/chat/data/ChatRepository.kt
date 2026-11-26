@@ -974,9 +974,17 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
     }
 
     private fun isTransientSendError(e: Throwable): Boolean = when (e) {
-        is IOException -> true
+        // ApiException — тоже IOException, поэтому проверяем её первой: 400/403 повторять бессмысленно.
         is ApiException -> e.status in 502..504 || e.code == "http_502" || e.code == "http_503" || e.code == "http_504"
+        is IOException -> true
         else -> false
+    }
+
+    /** Понятный текст ошибки отправки: причина с сервера, адрес сервера или тип сбоя. */
+    private fun sendErrorText(e: Exception): String = when (e) {
+        is ApiException -> e.message?.takeIf { it.isNotBlank() } ?: "Сервер отклонил отправку (${e.status})"
+        is IOException -> "Нет связи с сервером ${api.baseUrl}. Проверьте адрес в настройках."
+        else -> "Не удалось отправить: ${e.message ?: e.javaClass.simpleName}"
     }
 
     private suspend fun <T> withSendRetry(block: suspend () -> T): T {
@@ -984,6 +992,8 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
         for (attempt in 0..4) {
             try {
                 return block()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 last = e
                 if (!isTransientSendError(e) || attempt == 4) throw e
@@ -1002,9 +1012,11 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
                 decryptCache["${sent.id}:0"] = Decrypted(content)
                 merge(chatId, listOf(decrypt(sent)))
                 bumpChat(sent)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 markFailed(chatId, clientId)
-                if (e is ApiException) _sendErrors.tryEmit(chatId to (e.message ?: "Не удалось отправить"))
+                _sendErrors.tryEmit(chatId to sendErrorText(e))
             }
         }
     }
@@ -1139,8 +1151,11 @@ class ChatRepository(private val context: Context, val prefs: Prefs) {
                 merge(chatId, listOf(decrypt(sent).copy(localFile = ready)))
                 bumpChat(sent)
                 local.delete()
-            } catch (_: Exception) {
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
                 markFailed(chatId, clientId)
+                _sendErrors.tryEmit(chatId to sendErrorText(e))
             } finally {
                 enc.delete()
             }

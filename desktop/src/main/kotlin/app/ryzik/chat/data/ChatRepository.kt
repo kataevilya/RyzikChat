@@ -970,6 +970,12 @@ class ChatRepository(val prefs: Prefs) {
         sendContent(chatId, "text", Content(text = trimmed), replyTo, null)
     }
 
+    /** Понятный текст ошибки отправки: причина с сервера, адрес сервера или тип сбоя. */
+    private fun sendErrorText(e: Exception): String = when (e) {
+        is ApiException -> e.message?.takeIf { it.isNotBlank() } ?: "Сервер отклонил отправку (${e.status})"
+        is java.io.IOException -> "Нет связи с сервером ${api.baseUrl}. Проверьте адрес в настройках."
+        else -> "Не удалось отправить: ${e.message ?: e.javaClass.simpleName}"
+    }
     private fun sendContent(chatId: String, type: String, content: Content, replyTo: String?, forwardedFrom: String?, pendingId: String? = null) {
         val clientId = pendingId ?: UUID.randomUUID().toString()
         if (pendingId == null) merge(chatId, listOf(pending(chatId, clientId, type, content, replyTo, forwardedFrom)))
@@ -979,9 +985,11 @@ class ChatRepository(val prefs: Prefs) {
                 decryptCache["${sent.id}:0"] = Decrypted(content)
                 merge(chatId, listOf(decrypt(sent)))
                 bumpChat(sent)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 markFailed(chatId, clientId)
-                if (e is ApiException) _sendErrors.tryEmit(chatId to (e.message ?: "Не удалось отправить"))
+                _sendErrors.tryEmit(chatId to sendErrorText(e))
             }
         }
     }
@@ -1097,8 +1105,11 @@ class ChatRepository(val prefs: Prefs) {
                 merge(chatId, listOf(decrypt(sent).copy(localFile = ready)))
                 bumpChat(sent)
                 local.delete()
-            } catch (_: Exception) {
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
                 markFailed(chatId, clientId)
+                _sendErrors.tryEmit(chatId to sendErrorText(e))
             } finally {
                 enc.delete()
             }
