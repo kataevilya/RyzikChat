@@ -7,6 +7,9 @@ import crypto from 'node:crypto';
 import WebSocket from 'ws';
 import { startServer } from '../src/index.js';
 
+/** Публичный ключ должен быть ровно 32 байта в base64 — как у настоящего клиента. */
+const pk = (seed = 'a') => Buffer.alloc(32, (seed.charCodeAt(0) % 250) + 1).toString('base64');
+
 let srv, base, dir;
 
 before(async () => {
@@ -28,7 +31,7 @@ async function api(method, url, body, token) {
 let aliceToken;
 
 const reg = (username) => api('POST', '/api/auth/register', {
-  username, displayName: username.toUpperCase(), password: 'x'.repeat(64), publicKey: 'pk-' + username, encryptedPrivateKey: 'enc-' + username,
+  username, displayName: username.toUpperCase(), password: 'x'.repeat(64), publicKey: pk(username), encryptedPrivateKey: 'enc-' + username,
 });
 
 test('регистрация, чаты, сообщения, бейджи, websocket', async () => {
@@ -144,7 +147,7 @@ test('каналы, премиум, сигналы звонков, докуме�
   assert.equal(grp.body.isPublic, true);
   assert.equal(grp.body.username, 'ryzik_club');
   assert.equal((await api('POST', '/api/chats/group', { title: 'Клуб 2', username: 'RYZIK_CLUB' }, owner.body.token)).body.error, 'username_taken');
-  assert.equal((await api('POST', '/api/auth/register', { username: 'ryzik_club', password: 'x'.repeat(64), publicKey: 'k', encryptedPrivateKey: 'k' })).body.error, 'username_taken');
+  assert.equal((await api('POST', '/api/auth/register', { username: 'ryzik_club', password: 'x'.repeat(64), publicKey: pk('k'), encryptedPrivateKey: 'k' })).body.error, 'username_taken');
   await api('PATCH', `/api/chats/${grp.body.id}`, { isPublic: false }, fan.body.token);
   assert.equal((await api('GET', '/api/chat-username-check?username=ryzik_club', null, fan.body.token)).body.ok, true);
 
@@ -701,7 +704,7 @@ test('админ: удаление пользователя с сообщени�
   };
   const bad = from('10.0.0.66', 'dev-bad'), other = from('10.0.0.7', 'dev-ok');
   const regAt = (fn, username) => fn('POST', '/api/auth/register', {
-    username, displayName: username, password: 'x'.repeat(64), publicKey: 'pk', encryptedPrivateKey: 'enc',
+    username, displayName: username, password: 'x'.repeat(64), publicKey: pk(), encryptedPrivateKey: 'enc',
   });
   const spam = (await regAt(bad, 'spammer9')).body;
   const fine = (await regAt(other, 'fine9')).body;
@@ -1062,7 +1065,7 @@ test('не больше трёх аккаунтов с одного IP и чис
   };
   const spamNet = from('10.20.30.40'), home = from('10.20.30.41');
   const regAt = (fn, username, displayName) => fn('POST', '/api/auth/register', {
-    username, displayName, password: 'x'.repeat(64), publicKey: 'pk', encryptedPrivateKey: 'enc',
+    username, displayName, password: 'x'.repeat(64), publicKey: pk(), encryptedPrivateKey: 'enc',
   });
   const spam = [];
   for (let i = 1; i <= 3; i++) {
@@ -1111,3 +1114,20 @@ test('сезонное оформление: админ включает для 
   assert.equal((await api('PUT', '/api/admin/season', { season: 'winter' }, aliceToken)).body.season, 'winter');
 });
 
+test('битый публичный ключ: регистрация не принимается, а свой ключ можно прислать заново', async () => {
+  // Такой же запрос, но ключ не 32 байта — иначе другие не смогут зашифровать для аккаунта.
+  const bad = await api('POST', '/api/auth/register', {
+    username: 'badkey', displayName: 'Bad', password: 'x'.repeat(64), publicKey: 'c2hvcnQ=', encryptedPrivateKey: 'enc',
+  });
+  assert.equal(bad.status, 400);
+  assert.equal(bad.body.error, 'bad_keys');
+
+  const u = await reg('keyheal');
+  const good = pk('z');
+  const saved = await api('POST', '/api/me/keys', { publicKey: good }, u.body.token);
+  assert.equal(saved.status, 200);
+  assert.equal(saved.body.publicKey, good);
+  assert.equal((await api('GET', '/api/me', null, u.body.token)).body.publicKey, good);
+  assert.equal((await api('POST', '/api/me/keys', { publicKey: 'short' }, u.body.token)).status, 400);
+  assert.equal((await api('POST', '/api/me/keys', { publicKey: good })).status, 401);
+});

@@ -706,7 +706,6 @@ export function createApp({ db, dataDir, hub, adminUsernames = [], updateSource 
     if (typeof publicKey !== 'string' || typeof encryptedPrivateKey !== 'string') {
       throw new HttpError(400, 'bad_keys', 'Нет ключей шифрования');
     }
-    if (!key32(publicKey)) throw new HttpError(400, 'bad_keys', 'Публичный ключ должен быть 32 байта');
     const name = String(displayName ?? '').trim().slice(0, 64) || username;
     if (db.prepare('SELECT 1 FROM users WHERE username = ?').get(username) || usernameTaken(username)) {
       throw new HttpError(409, 'username_taken', 'Это имя пользователя уже занято');
@@ -722,6 +721,8 @@ export function createApp({ db, dataDir, hub, adminUsernames = [], updateSource 
         throw new HttpError(429, 'too_many_accounts', `С этой сети уже зарегистрировано ${maxAccountsPerIp} аккаунта, больше нельзя`);
       }
     }
+    // Ключ должен быть ровно 32 байта: иначе никто не сможет зашифровать для этого аккаунта.
+    if (!key32(publicKey)) throw new HttpError(400, 'bad_keys', 'Публичный ключ должен быть 32 байта');
     const result = tx(db, () => {
       const id = newId();
       const first = db.prepare('SELECT COUNT(*) AS n FROM users WHERE id != ? AND is_bot = 0').get(SYSTEM_ID).n === 0;

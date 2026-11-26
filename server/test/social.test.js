@@ -5,6 +5,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { startServer } from '../src/index.js';
 
+/** Публичный ключ должен быть ровно 32 байта в base64 — как у настоящего клиента. */
+const pk = (seed = 'a') => Buffer.alloc(32, (seed.charCodeAt(0) % 250) + 1).toString('base64');
+
 let srv, base, dir;
 
 before(async () => {
@@ -24,7 +27,7 @@ async function api(method, url, body, token) {
   return { status: res.status, body: await res.json() };
 }
 const reg = async (username) => (await api('POST', '/api/auth/register', {
-  username, displayName: username, password: 'x'.repeat(64), publicKey: 'pk-' + username, encryptedPrivateKey: 'enc-' + username,
+  username, displayName: username, password: 'x'.repeat(64), publicKey: pk(username), encryptedPrivateKey: 'enc-' + username,
 })).body;
 const say = (chatId, token) => api('POST', `/api/chats/${chatId}/messages`, { type: 'text', payload: '{"v":0,"plain":"hi"}' }, token);
 const dayKey = (t) => new Date(t + 3 * 3600_000).toISOString().slice(0, 10);
