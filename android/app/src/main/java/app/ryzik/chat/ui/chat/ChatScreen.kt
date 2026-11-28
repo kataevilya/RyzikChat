@@ -174,7 +174,6 @@ import app.ryzik.chat.ui.components.TypingDots
 import app.ryzik.chat.ui.components.formatDay
 import app.ryzik.chat.ui.components.formatLastSeen
 import app.ryzik.chat.ui.components.isSameDay
-import app.ryzik.chat.ui.theme.glassPanel
 import app.ryzik.chat.ui.theme.wallpaperColors
 import app.ryzik.chat.ui.theme.WallpaperBackground
 import app.ryzik.chat.ui.theme.WallpaperPicker
@@ -518,10 +517,12 @@ fun ChatScreen(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     FloatingCircle(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Назад") }
                     Spacer(Modifier.width(8.dp))
-                    Box(
-                        Modifier.weight(1f).height(52.dp)
-                            .glassPanel(RoundedCornerShape(26.dp), MaterialTheme.colorScheme.surfaceContainerHigh, elevation = 4.dp)
-                            .clickable(onClick = onOpenInfo),
+                    Surface(
+                        onClick = onOpenInfo,
+                        shape = RoundedCornerShape(26.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shadowElevation = 4.dp,
+                        modifier = Modifier.weight(1f).height(52.dp),
                     ) {
                         Row(Modifier.padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -567,10 +568,12 @@ fun ChatScreen(
                     }
                     Spacer(Modifier.width(8.dp))
                     Box {
-                        Box(
-                            Modifier.size(52.dp)
-                                .glassPanel(CircleShape, MaterialTheme.colorScheme.surfaceContainerHigh, elevation = 4.dp)
-                                .clickable { showMenu = true },
+                        Surface(
+                            onClick = { showMenu = true },
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            shadowElevation = 4.dp,
+                            modifier = Modifier.size(52.dp),
                         ) {
                             Box(Modifier.padding(3.dp)) {
                                 Avatar(
@@ -882,9 +885,11 @@ fun ChatScreen(
                             }
                         }
                         Spacer(Modifier.width(6.dp))
-                        Box(
-                            Modifier.weight(1f)
-                                .glassPanel(RoundedCornerShape(26.dp), MaterialTheme.colorScheme.surfaceContainerHigh, elevation = 4.dp),
+                        Surface(
+                            shape = RoundedCornerShape(26.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            shadowElevation = 4.dp,
+                            modifier = Modifier.weight(1f),
                         ) {
                         if (recordingVoice) {
                             VoiceRecordingBar(voiceElapsed, dragX, cancelDistance, Modifier.fillMaxWidth().height(52.dp))
@@ -1186,12 +1191,13 @@ private fun copy(context: Context, text: String) {
 /** Круглая «плавающая» кнопка с тенью. */
 @Composable
 private fun FloatingCircle(onClick: () -> Unit, content: @Composable () -> Unit) {
-    Box(
-        Modifier.size(52.dp)
-            .glassPanel(CircleShape, MaterialTheme.colorScheme.surfaceContainerHigh, elevation = 4.dp)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) { content() }
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 4.dp,
+        modifier = Modifier.size(52.dp),
+    ) { Box(contentAlignment = Alignment.Center) { content() } }
 }
 
 /** Вместо поля ввода, если собеседник заблокирован. */

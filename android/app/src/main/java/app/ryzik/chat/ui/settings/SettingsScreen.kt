@@ -17,7 +17,6 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.BatteryChargingFull
 import androidx.compose.material.icons.rounded.PersonAdd
 import app.ryzik.chat.ui.theme.PREMIUM_SEEDS_FROM
-import app.ryzik.chat.ui.theme.glassPanel
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Code
@@ -441,14 +440,6 @@ fun SettingsSectionScreen(section: SettingsSection, onBack: () -> Unit, onOpenTe
                 title = { Text(section.title) },
                 navigationIcon = { if (onBack != null) IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Назад") } },
                 scrollBehavior = scroll,
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent,
-                ),
-                modifier = Modifier.glassPanel(
-                    RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
-                    MaterialTheme.colorScheme.surface,
-                ),
             )
         },
     ) { padding ->
@@ -539,11 +530,6 @@ private fun AppearanceSettings(s: AppSettings, update: ((AppSettings) -> AppSett
         }
     }
     SwitchRow("Чёрная тема (AMOLED)", "Глубокий чёрный в тёмной теме", s.amoled) { v -> update { it.copy(amoled = v) } }
-    SwitchRow(
-        "Liquid Glass",
-        "Стеклянные панели, кнопки и сообщения: сквозь них видно цветной градиент",
-        s.liquidGlass,
-    ) { v -> update { it.copy(liquidGlass = v) } }
 
     val season by RyzikApp.instance.repo.season.collectAsState()
     SwitchRow(

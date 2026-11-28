@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,7 +29,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import app.ryzik.chat.ui.theme.glassPanel
 
 /** Цвета круглых значков в настройках. */
 object SettingsColors {
@@ -66,9 +66,10 @@ internal fun ListItem(
     leadingContent: (@Composable () -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
 ) {
-    Box(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
-            .glassPanel(RoundedCornerShape(22.dp), MaterialTheme.colorScheme.surfaceContainer),
+    Surface(
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
         androidx.compose.material3.ListItem(
             headlineContent = headlineContent,
@@ -84,9 +85,10 @@ internal fun ListItem(
 /** Большая карточка раздела: цветной значок, название, подпись и стрелка. */
 @Composable
 fun SettingsCard(icon: ImageVector, color: Color, title: String, subtitle: String?, onClick: () -> Unit, trailing: (@Composable () -> Unit)? = null) {
-    Box(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
-            .glassPanel(RoundedCornerShape(24.dp), MaterialTheme.colorScheme.surfaceContainer),
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
         Row(
             Modifier.clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 14.dp),
@@ -109,7 +111,7 @@ fun SettingsCard(icon: ImageVector, color: Color, title: String, subtitle: Strin
 /** Квадратная плитка для сетки 2×N на главном экране настроек. */
 @Composable
 fun SettingsTile(icon: ImageVector, color: Color, title: String, subtitle: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Box(modifier.glassPanel(RoundedCornerShape(28.dp), MaterialTheme.colorScheme.surfaceContainer)) {
+    Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainer, modifier = modifier) {
         Column(Modifier.clickable(onClick = onClick).padding(16.dp).height(112.dp)) {
             RoundIcon(icon, color, 44.dp)
             Spacer(Modifier.weight(1f))

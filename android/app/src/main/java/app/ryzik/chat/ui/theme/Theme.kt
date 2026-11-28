@@ -29,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.luminance
@@ -192,25 +191,19 @@ fun RyzikTheme(settings: AppSettings, season: SeasonStyle = SeasonStyle.None, co
         ThemeMode.Dark -> true
     }
     val context = LocalContext.current
-    // Палитру считаем только при смене темы: иначе каждый чих (новое сообщение, статус
-    // «онлайн») пересобирал ColorScheme и заставлял перерисовываться весь интерфейс.
-    val scheme = remember(dark, settings.dynamicColor, settings.seedColor, settings.amoled, settings.liquidGlass, season) {
-        var s = when {
-            settings.dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-                if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            else -> schemeFromSeed(SeedColors[settings.seedColor.coerceIn(SeedColors.indices)].first, dark)
-        }
-        // Сезонные акценты видны даже при включённом Material You.
-        s = s.seasonal(season, dark)
-        if (dark && settings.amoled) {
-            s = s.copy(
-                background = Color.Black, surface = Color.Black,
-                surfaceContainerLowest = Color.Black, surfaceContainerLow = Color(0xFF0A0A0A),
-                surfaceContainer = Color(0xFF111111),
-            )
-        }
-        if (settings.liquidGlass) s = s.glassy(dark)
-        s
+    var scheme = when {
+        settings.dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+            if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        else -> schemeFromSeed(SeedColors[settings.seedColor.coerceIn(SeedColors.indices)].first, dark)
+    }
+    // Сезонные акценты видны даже при включённом Material You.
+    scheme = scheme.seasonal(season, dark)
+    if (dark && settings.amoled) {
+        scheme = scheme.copy(
+            background = Color.Black, surface = Color.Black,
+            surfaceContainerLowest = Color.Black, surfaceContainerLow = Color(0xFF0A0A0A),
+            surfaceContainer = Color(0xFF111111),
+        )
     }
     val animated = scheme.animated()
 
@@ -231,7 +224,6 @@ fun RyzikTheme(settings: AppSettings, season: SeasonStyle = SeasonStyle.None, co
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.material3.LocalContentColor provides animated.onSurface,
             LocalSeason provides season,
-            LocalLiquidGlass provides settings.liquidGlass,
             content = content,
         )
     }
@@ -276,100 +268,6 @@ private fun ColorScheme.seasonal(season: SeasonStyle, dark: Boolean): ColorSchem
     )
 }
 
-
-/**
- * Liquid Glass: панели, кнопки и пузыри становятся полупрозрачными,
- * поэтому сквозь них просвечивает градиентный фон [LiquidGlassBackground].
- */
-private fun ColorScheme.glassy(dark: Boolean): ColorScheme {
-    val surfaceAlpha = if (dark) 0.60f else 0.72f
-    return copy(
-        background = background.copy(alpha = if (dark) 0.36f else 0.30f),
-        surface = surface.copy(alpha = surfaceAlpha),
-        surfaceVariant = surfaceVariant.copy(alpha = 0.55f),
-        surfaceContainerLowest = surfaceContainerLowest.copy(alpha = surfaceAlpha - 0.20f),
-        surfaceContainerLow = surfaceContainerLow.copy(alpha = surfaceAlpha - 0.14f),
-        surfaceContainer = surfaceContainer.copy(alpha = surfaceAlpha - 0.07f),
-        surfaceContainerHigh = surfaceContainerHigh.copy(alpha = surfaceAlpha),
-        surfaceContainerHighest = surfaceContainerHighest.copy(alpha = surfaceAlpha + 0.06f),
-        primary = primary.copy(alpha = 0.90f),
-        primaryContainer = primaryContainer.copy(alpha = 0.58f),
-        secondaryContainer = secondaryContainer.copy(alpha = 0.56f),
-        tertiaryContainer = tertiaryContainer.copy(alpha = 0.56f),
-        outline = outline.copy(alpha = 0.55f),
-        outlineVariant = outlineVariant.copy(alpha = 0.45f),
-    )
-}
-
-/** Мягкий градиентный фон, на котором видно стекло. Цвета берутся из темы. */
-@Composable
-fun LiquidGlassBackground(modifier: Modifier = Modifier) {
-    val c = MaterialTheme.colorScheme
-    val dark = c.background.luminance() < 0.5f
-    // Фон статичный: раньше здесь крутилась бесконечная анимация на весь экран,
-    // из-за неё телефон перерисовывал всю картинку каждый кадр и всё лагало.
-    val phase = 0.55f
-    val pAlpha = if (dark) 0.42f else 0.26f
-    val tAlpha = if (dark) 0.36f else 0.22f
-    val sAlpha = if (dark) 0.32f else 0.18f
-    Canvas(modifier) {
-        drawRect(c.background.copy(alpha = 1f))
-        // Общий диагональный тон: от основного цвета к дополнительному.
-        drawRect(
-            Brush.linearGradient(
-                listOf(
-                    c.primary.copy(alpha = if (dark) 0.22f else 0.14f),
-                    Color.Transparent,
-                    c.tertiary.copy(alpha = if (dark) 0.20f else 0.13f),
-                ),
-                start = Offset.Zero,
-                end = Offset(size.width, size.height),
-            ),
-        )
-        val minSide = size.minDimension
-        val radiusA = minSide * 0.95f
-        val centerA = Offset(size.width * (0.10f + 0.16f * phase), size.height * 0.06f)
-        drawCircle(
-            brush = Brush.radialGradient(
-                listOf(c.primary.copy(alpha = pAlpha), c.primary.copy(alpha = pAlpha * 0.35f), Color.Transparent),
-                center = centerA,
-                radius = radiusA,
-            ),
-            radius = radiusA,
-            center = centerA,
-        )
-        val radiusB = minSide * 1.05f
-        val centerB = Offset(size.width * (0.98f - 0.18f * phase), size.height * (0.40f + 0.10f * phase))
-        drawCircle(
-            brush = Brush.radialGradient(
-                listOf(c.tertiary.copy(alpha = tAlpha), c.tertiary.copy(alpha = tAlpha * 0.35f), Color.Transparent),
-                center = centerB,
-                radius = radiusB,
-            ),
-            radius = radiusB,
-            center = centerB,
-        )
-        val radiusC = minSide * 0.90f
-        val centerC = Offset(size.width * (0.16f + 0.12f * phase), size.height * (0.96f - 0.08f * phase))
-        drawCircle(
-            brush = Brush.radialGradient(
-                listOf(c.secondary.copy(alpha = sAlpha), c.secondary.copy(alpha = sAlpha * 0.35f), Color.Transparent),
-                center = centerC,
-                radius = radiusC,
-            ),
-            radius = radiusC,
-            center = centerC,
-        )
-        // Лёгкая вуаль снизу, чтобы низ экрана оставался спокойным.
-        drawRect(
-            Brush.verticalGradient(
-                listOf(Color.Transparent, c.background.copy(alpha = if (dark) 0.45f else 0.35f)),
-                startY = size.height * 0.55f,
-                endY = size.height,
-            ),
-        )
-    }
-}
 /** Обои чата: базовые цвета; узоры рисует WallpaperBackground. */
 @Composable
 fun wallpaperColors(index: Int): List<Color> {
