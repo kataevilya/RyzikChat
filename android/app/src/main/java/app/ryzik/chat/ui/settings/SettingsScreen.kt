@@ -530,6 +530,11 @@ private fun AppearanceSettings(s: AppSettings, update: ((AppSettings) -> AppSett
         }
     }
     SwitchRow("Чёрная тема (AMOLED)", "Глубокий чёрный в тёмной теме", s.amoled) { v -> update { it.copy(amoled = v) } }
+    SwitchRow(
+        "Liquid Glass",
+        "Стеклянные панели, кнопки и сообщения: сквозь них видно цветной градиент",
+        s.liquidGlass,
+    ) { v -> update { it.copy(liquidGlass = v) } }
 
     val season by RyzikApp.instance.repo.season.collectAsState()
     SwitchRow(

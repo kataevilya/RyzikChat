@@ -27,6 +27,8 @@ data class AppSettings(
     val dynamicColor: Boolean = true,
     val seedColor: Int = 0,
     val amoled: Boolean = false,
+    /** Liquid Glass: полупрозрачные панели, кнопки и пузыри поверх мягкого градиента. */
+    val liquidGlass: Boolean = false,
     val textSize: Float = 16f,
     val bubbleRadius: Float = 18f,
     val wallpaper: Int = 0,
@@ -92,6 +94,7 @@ class Prefs(private val context: Context) {
         val dynamic = booleanPreferencesKey("dynamic_color")
         val seed = intPreferencesKey("seed_color")
         val amoled = booleanPreferencesKey("amoled")
+        val liquidGlass = booleanPreferencesKey("liquid_glass")
         val textSize = floatPreferencesKey("text_size")
         val radius = floatPreferencesKey("bubble_radius")
         val wallpaper = intPreferencesKey("wallpaper")
@@ -139,6 +142,7 @@ class Prefs(private val context: Context) {
             dynamicColor = p[K.dynamic] ?: d.dynamicColor,
             seedColor = p[K.seed] ?: d.seedColor,
             amoled = p[K.amoled] ?: d.amoled,
+            liquidGlass = p[K.liquidGlass] ?: d.liquidGlass,
             textSize = p[K.textSize] ?: d.textSize,
             bubbleRadius = p[K.radius] ?: d.bubbleRadius,
             wallpaper = p[K.wallpaper] ?: d.wallpaper,
@@ -177,6 +181,7 @@ class Prefs(private val context: Context) {
             p[K.dynamic] = s.dynamicColor
             p[K.seed] = s.seedColor
             p[K.amoled] = s.amoled
+            p[K.liquidGlass] = s.liquidGlass
             p[K.textSize] = s.textSize
             p[K.radius] = s.bubbleRadius
             p[K.wallpaper] = s.wallpaper

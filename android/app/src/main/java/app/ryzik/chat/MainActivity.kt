@@ -76,6 +76,7 @@ import app.ryzik.chat.ui.profile.ProfileScreen
 import app.ryzik.chat.ui.settings.SettingsScreen
 import app.ryzik.chat.ui.settings.SettingsSection
 import app.ryzik.chat.ui.settings.SettingsSectionScreen
+import app.ryzik.chat.ui.theme.LiquidGlassBackground
 import app.ryzik.chat.ui.theme.RyzikTheme
 import app.ryzik.chat.ui.theme.SeasonalOverlay
 import app.ryzik.chat.ui.welcome.WelcomeScreen
@@ -112,6 +113,8 @@ class MainActivity : ComponentActivity() {
             val seasonStyle = if (s.seasonalTheme) season.style else SeasonStyle.None
             RyzikTheme(s, seasonStyle) {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
+                    // Liquid Glass: мягкий градиент под полупрозрачными панелями.
+                    if (s.liquidGlass) LiquidGlassBackground(s.animations, Modifier.matchParentSize())
                     if (settings == null || auth is AuthState.Loading) {
                         CircularProgressIndicator(Modifier.align(Alignment.Center))
                     } else {
