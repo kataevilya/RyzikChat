@@ -114,7 +114,7 @@ class MainActivity : ComponentActivity() {
             RyzikTheme(s, seasonStyle) {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
                     // Liquid Glass: мягкий градиент под полупрозрачными панелями.
-                    if (s.liquidGlass) LiquidGlassBackground(s.animations, Modifier.matchParentSize())
+                    if (s.liquidGlass) LiquidGlassBackground(Modifier.matchParentSize())
                     if (settings == null || auth is AuthState.Loading) {
                         CircularProgressIndicator(Modifier.align(Alignment.Center))
                     } else {

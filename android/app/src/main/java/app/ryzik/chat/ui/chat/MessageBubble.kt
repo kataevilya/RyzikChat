@@ -81,6 +81,7 @@ import app.ryzik.chat.ui.components.formatDuration
 import app.ryzik.chat.ui.components.formatSize
 import app.ryzik.chat.ui.components.formatTime
 import app.ryzik.chat.ui.components.parseColor
+import app.ryzik.chat.ui.theme.glassPanel
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.VideoFrameDecoder
@@ -220,7 +221,7 @@ fun MessageBubble(
         ) {
             val bubbleModifier = Modifier
                 .clip(shape)
-                .then(if (bare) Modifier else Modifier.background(bubbleColor))
+                .then(if (bare) Modifier else Modifier.glassPanel(shape, bubbleColor))
                 .combinedClickable(
                     onClick = {
                         when {

@@ -192,21 +192,26 @@ fun RyzikTheme(settings: AppSettings, season: SeasonStyle = SeasonStyle.None, co
         ThemeMode.Dark -> true
     }
     val context = LocalContext.current
-    var scheme = when {
-        settings.dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
-            if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        else -> schemeFromSeed(SeedColors[settings.seedColor.coerceIn(SeedColors.indices)].first, dark)
+    // Палитру считаем только при смене темы: иначе каждый чих (новое сообщение, статус
+    // «онлайн») пересобирал ColorScheme и заставлял перерисовываться весь интерфейс.
+    val scheme = remember(dark, settings.dynamicColor, settings.seedColor, settings.amoled, settings.liquidGlass, season) {
+        var s = when {
+            settings.dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+                if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            else -> schemeFromSeed(SeedColors[settings.seedColor.coerceIn(SeedColors.indices)].first, dark)
+        }
+        // Сезонные акценты видны даже при включённом Material You.
+        s = s.seasonal(season, dark)
+        if (dark && settings.amoled) {
+            s = s.copy(
+                background = Color.Black, surface = Color.Black,
+                surfaceContainerLowest = Color.Black, surfaceContainerLow = Color(0xFF0A0A0A),
+                surfaceContainer = Color(0xFF111111),
+            )
+        }
+        if (settings.liquidGlass) s = s.glassy(dark)
+        s
     }
-    // Сезонные акценты видны даже при включённом Material You.
-    scheme = scheme.seasonal(season, dark)
-    if (dark && settings.amoled) {
-        scheme = scheme.copy(
-            background = Color.Black, surface = Color.Black,
-            surfaceContainerLowest = Color.Black, surfaceContainerLow = Color(0xFF0A0A0A),
-            surfaceContainer = Color(0xFF111111),
-        )
-    }
-    if (settings.liquidGlass) scheme = scheme.glassy(dark)
     val animated = scheme.animated()
 
     val view = LocalView.current
@@ -226,6 +231,7 @@ fun RyzikTheme(settings: AppSettings, season: SeasonStyle = SeasonStyle.None, co
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.material3.LocalContentColor provides animated.onSurface,
             LocalSeason provides season,
+            LocalLiquidGlass provides settings.liquidGlass,
             content = content,
         )
     }
@@ -297,18 +303,12 @@ private fun ColorScheme.glassy(dark: Boolean): ColorScheme {
 
 /** Мягкий градиентный фон, на котором видно стекло. Цвета берутся из темы. */
 @Composable
-fun LiquidGlassBackground(animated: Boolean = true, modifier: Modifier = Modifier) {
+fun LiquidGlassBackground(modifier: Modifier = Modifier) {
     val c = MaterialTheme.colorScheme
     val dark = c.background.luminance() < 0.5f
-    val phase = if (animated) {
-        val transition = rememberInfiniteTransition(label = "glass")
-        transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(tween(24000, easing = LinearEasing), RepeatMode.Reverse),
-            label = "glassPhase",
-        ).value
-    } else 0.55f
+    // Фон статичный: раньше здесь крутилась бесконечная анимация на весь экран,
+    // из-за неё телефон перерисовывал всю картинку каждый кадр и всё лагало.
+    val phase = 0.55f
     val pAlpha = if (dark) 0.42f else 0.26f
     val tAlpha = if (dark) 0.36f else 0.22f
     val sAlpha = if (dark) 0.32f else 0.18f

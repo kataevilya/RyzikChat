@@ -45,7 +45,6 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -59,6 +58,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.ryzik.chat.RyzikApp
+import app.ryzik.chat.ui.theme.glassPanel
 
 enum class HomeTab(val title: String, val icon: ImageVector, val iconOff: ImageVector) {
     Chats("Чаты", Icons.AutoMirrored.Rounded.Chat, Icons.AutoMirrored.Outlined.Chat),
@@ -102,11 +102,12 @@ private fun FloatingTabBar(selected: HomeTab, onTab: (HomeTab) -> Unit, unread: 
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Surface(
-            shape = RoundedCornerShape(32.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 3.dp,
-            shadowElevation = 8.dp,
+        Box(
+            Modifier.glassPanel(
+                RoundedCornerShape(32.dp),
+                MaterialTheme.colorScheme.surfaceContainerHigh,
+                elevation = 8.dp,
+            ),
         ) {
             Row(
                 Modifier.padding(6.dp),
